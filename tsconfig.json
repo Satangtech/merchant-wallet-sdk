@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "experimentalDecorators": true,
+    "target": "es6",
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "resolveJsonModule": true,
+    "outDir": "dist",
+    "skipLibCheck": true
+  },
+  "include": ["lib", "test", "test-integration"],
+  "exclude": ["node_modules", "dist"]
+}
