@@ -11,6 +11,6 @@
     "outDir": "dist",
     "skipLibCheck": true
   },
-  "include": ["lib", "test", "test-integration"],
+  "include": ["lib", "tests", "test-integration"],
   "exclude": ["node_modules", "dist"]
 }
