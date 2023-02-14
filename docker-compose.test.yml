@@ -1,0 +1,28 @@
+services:
+  firovm:
+    image: satangtech/firovm-poa:2b225f0791ebb560d299780364965254cace247f
+    tty: true
+    stdin_open: true
+    volumes:
+      - ./.firovm:/firovm
+    ports:
+      - 1234:1234
+      - 11000:11000
+
+  janus:
+    image: satangtech/janus
+    volumes:
+      - ./accounts.txt:/accounts.txt
+    environment:
+      - QTUM_NETWORK=test
+      - QTUM_RPC=http://test:test@firovm:1234
+    command: --accounts=/accounts.txt --bind=0.0.0.0
+    depends_on:
+      - firovm
+
+  it-test:
+    build: .
+    tty: true
+    stdin_open: true
+    depends_on:
+      - janus
