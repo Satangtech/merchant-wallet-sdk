@@ -9,20 +9,20 @@ services:
       - 1234:1234
       - 11000:11000
 
-  janus:
-    image: satangtech/janus
-    volumes:
-      - ./accounts.txt:/accounts.txt
-    environment:
-      - QTUM_NETWORK=test
-      - QTUM_RPC=http://test:test@firovm:1234
-    command: --accounts=/accounts.txt --bind=0.0.0.0
-    depends_on:
-      - firovm
+  # janus:
+  #   image: satangtech/janus
+  #   volumes:
+  #     - ./accounts.txt:/accounts.txt
+  #   environment:
+  #     - QTUM_NETWORK=test
+  #     - QTUM_RPC=http://test:test@firovm:1234
+  #   command: --accounts=/accounts.txt --bind=0.0.0.0
+  #   depends_on:
+  #     - firovm
 
   it-test:
     build: .
     tty: true
     stdin_open: true
     depends_on:
-      - janus
+      - firovm
