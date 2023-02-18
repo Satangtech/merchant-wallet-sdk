@@ -3,30 +3,32 @@ import { expect } from "chai";
 import {
   Client,
   Context,
-  Method,
   PrivkeyAccount,
   RPCClient,
   Transaction,
 } from "firovm-sdk";
 import { MerchantWallet, Testnet } from "../../lib";
 import {
+  abiERC20,
+  byteCodeContractERC20,
   SafeABI,
   SafeByteCode,
   SafeProxyFactoryABI,
   SafeProxyFactoryByteCode,
   testAddresses,
+  testAddressMiner,
   testPrivkeys,
 } from "./data";
 import {
   AddressZero,
   buildSafeTransaction,
   buildSignatureBytes,
-  fromHexAddress,
   getRandomIntAsString,
   safeApproveHash,
 } from "./utils";
 
 let safeContractAddress: string;
+let erc20ContractAddress: string;
 
 @suite
 class SafeContractTest {
@@ -37,6 +39,7 @@ class SafeContractTest {
     private rpcClient: RPCClient,
     private client: Client,
     private address: {
+      testAddressMiner: string;
       testAddress1: string;
       testAddress2: string;
       testAddress3: string;
@@ -44,6 +47,7 @@ class SafeContractTest {
       testAddress5: string;
     },
     private privkey: {
+      testPrivkeyMiner: string;
       testPrivkey1: string;
       testPrivkey2: string;
       testPrivkey3: string;
@@ -52,6 +56,7 @@ class SafeContractTest {
     },
     private context: Context,
     private account: {
+      miner: PrivkeyAccount;
       acc1: PrivkeyAccount;
       acc2: PrivkeyAccount;
       acc3: PrivkeyAccount;
@@ -68,6 +73,7 @@ class SafeContractTest {
     this.privkey = testPrivkeys;
     this.context = new Context().withNetwork(Testnet);
     this.account = {
+      miner: new PrivkeyAccount(this.context, this.privkey.testPrivkeyMiner),
       acc1: new PrivkeyAccount(this.context, this.privkey.testPrivkey1),
       acc2: new PrivkeyAccount(this.context, this.privkey.testPrivkey2),
       acc3: new PrivkeyAccount(this.context, this.privkey.testPrivkey3),
@@ -79,7 +85,7 @@ class SafeContractTest {
   async generateToAddress() {
     const res = await this.rpcClient.rpc("generatetoaddress", [
       1,
-      this.address.testAddress1,
+      testAddressMiner,
     ]);
     expect(res.result).to.be.a("array");
   }
@@ -156,15 +162,32 @@ class SafeContractTest {
     )[1];
   }
 
+  async deployContractERC20() {
+    const contract = new this.client.Contract(abiERC20);
+    const contractDeploy = contract.deploy(byteCodeContractERC20);
+    const txid = await contractDeploy.send({ from: this.account.acc1 });
+    expect(txid).to.be.a("string");
+    await this.generateToAddress();
+
+    const response = await this.rpcClient.getTransactionReceipt(txid);
+    expect(response.result.length).to.be.greaterThan(0);
+    expect(response.result[0].contractAddress).to.be.a("string");
+    erc20ContractAddress = response.result[0].contractAddress;
+  }
+
+  async sendTo(acc: PrivkeyAccount, to: string, count: number = 1) {
+    for (let i = 0; i < count; i++) {
+      await this.sendToAddress(acc, to, 100 * 1e8);
+    }
+  }
+
   @test
   async init() {
     await this.loadWallet();
+    await this.sendTo(this.account.miner, this.address.testAddress1, 20);
+    await this.sendTo(this.account.miner, this.address.testAddress2, 5);
     await this.initSafeContract();
-    await this.sendToAddress(
-      this.account.acc1,
-      this.address.testAddress2,
-      10000 * 1e8
-    );
+    await this.deployContractERC20();
   }
 
   @test
@@ -229,19 +252,17 @@ class SafeContractTest {
 
   @test
   async depositToSafe() {
-    // const nativeAddress = fromHexAddress(safeContractAddress);
-    // const balanceBefore = await this.client.getBalance(nativeAddress);
-    // expect(balanceBefore).to.be.equal(0);
-
-    // await this.sendToAddress(this.account.acc1, nativeAddress, 10000);
-    // const balanceAfter = await this.client.getBalance(nativeAddress);
-    // expect(balanceAfter).to.be.equal(10000);
     const contract = new this.client.Contract(SafeABI, safeContractAddress);
     await contract.methods.deposit().send({
       from: this.account.acc1,
       value: 10000,
     });
     await this.generateToAddress();
+    const { result, error } = await this.rpcClient.rpc("getaccountinfo", [
+      safeContractAddress,
+    ]);
+    expect(error).to.be.null;
+    expect(result.balance).to.be.equal(10000);
   }
 
   async getTransactionHash(safeTx: {
@@ -281,7 +302,6 @@ class SafeContractTest {
       to: this.account.acc4.hex_address(),
       value: 1000,
       operation: 0,
-      // gasPrice: 1,
       safeTxGas: 1000000,
       refundReceiver: this.account.acc1.hex_address(),
       nonce: await this.safeNonce(),
@@ -293,25 +313,6 @@ class SafeContractTest {
     ];
     const signatureBytes = buildSignatureBytes(signatures);
     const contract = new this.client.Contract(SafeABI, safeContractAddress);
-    // const callData = await contract.methods
-    //   .execTransaction(
-    //     safeTx.to,
-    //     safeTx.value,
-    //     safeTx.data,
-    //     safeTx.operation,
-    //     safeTx.safeTxGas,
-    //     safeTx.baseGas,
-    //     safeTx.gasPrice,
-    //     safeTx.gasToken,
-    //     safeTx.refundReceiver,
-    //     signatureBytes
-    //   )
-    //   .encodeABI();
-    // const gasLimit = await this.client.estimateFee(
-    //   safeContractAddress,
-    //   callData,
-    //   this.address.testAddress1
-    // );
 
     const tx = await contract.methods
       .execTransaction(
@@ -383,5 +384,124 @@ class SafeContractTest {
     expect(error1).to.be.null;
     expect(result1.length).to.be.greaterThan(0);
     expect(result1[0].excepted).to.be.equal("None");
+  }
+
+  @test
+  async getAccountInfo() {
+    const { result, error } = await this.rpcClient.rpc("getaccountinfo", [
+      safeContractAddress,
+    ]);
+    expect(error).to.be.null;
+    expect(result.balance).to.be.equal(9000);
+
+    const balance = await this.client.getBalance(
+      this.account.acc4.address().toString()
+    );
+    expect(balance).to.be.equal(1000);
+  }
+
+  @test
+  async sendTokenToSafe() {
+    const contract = new this.client.Contract(abiERC20, erc20ContractAddress);
+    const txid = await contract.methods
+      .transfer(
+        `0x${safeContractAddress}`,
+        (BigInt(10) * BigInt(1e18)).toString()
+      )
+      .send({
+        from: this.account.acc1,
+      });
+    expect(txid).to.be.a("string");
+    await this.generateToAddress();
+
+    const { result, error } = await this.rpcClient.getTransactionReceipt(txid);
+    expect(error).to.be.null;
+    expect(result.length).to.be.greaterThan(0);
+    expect(result[0].excepted).to.be.equal("None");
+
+    const res = (
+      await contract.methods.balanceOf(`0x${safeContractAddress}`).call()
+    )["0"];
+    expect(res).to.be.equal((BigInt(10) * BigInt(1e18)).toString());
+  }
+
+  @test
+  async sendTokenFromSafe() {
+    const contractERC20 = new this.client.Contract(
+      abiERC20,
+      erc20ContractAddress
+    );
+    const data = contractERC20.methods
+      .transfer(
+        this.account.acc4.hex_address(),
+        (BigInt(1) * BigInt(1e18)).toString()
+      )
+      .encodeABI();
+
+    const safeTx = buildSafeTransaction({
+      to: `0x${erc20ContractAddress}`,
+      value: 0,
+      data,
+      safeTxGas: 1000000,
+      refundReceiver: this.account.acc1.hex_address(),
+      nonce: await this.safeNonce(),
+    });
+    const signatures = [
+      safeApproveHash(this.account.acc1.hex_address()),
+      safeApproveHash(this.account.acc2.hex_address()),
+    ];
+    const signatureBytes = buildSignatureBytes(signatures);
+
+    const txHash = await this.getTransactionHash(safeTx);
+    const contractSafe = new this.client.Contract(SafeABI, safeContractAddress);
+    const txApproveHash1 = await contractSafe.methods.approveHash(txHash).send({
+      from: this.account.acc2,
+    });
+    expect(txApproveHash1).to.be.a("string");
+    await this.generateToAddress();
+    const { result: resultApproveHash1, error: errorApproveHash1 } =
+      await this.rpcClient.getTransactionReceipt(txApproveHash1);
+    expect(errorApproveHash1).to.be.null;
+    expect(resultApproveHash1.length).to.be.greaterThan(0);
+    expect(resultApproveHash1[0].excepted).to.be.equal("None");
+
+    const txApproveHash2 = await contractSafe.methods.approveHash(txHash).send({
+      from: this.account.acc1,
+    });
+    expect(txApproveHash2).to.be.a("string");
+    await this.generateToAddress();
+    const { result: resultApproveHash2, error: errorApproveHash2 } =
+      await this.rpcClient.getTransactionReceipt(txApproveHash2);
+    expect(errorApproveHash2).to.be.null;
+    expect(resultApproveHash2.length).to.be.greaterThan(0);
+    expect(resultApproveHash2[0].excepted).to.be.equal("None");
+
+    const tx = await contractSafe.methods
+      .execTransaction(
+        safeTx.to,
+        safeTx.value,
+        safeTx.data,
+        safeTx.operation,
+        safeTx.safeTxGas,
+        safeTx.baseGas,
+        safeTx.gasPrice,
+        safeTx.gasToken,
+        safeTx.refundReceiver,
+        signatureBytes
+      )
+      .send({
+        from: this.account.acc1,
+      });
+    expect(tx).to.be.a("string");
+    await this.generateToAddress();
+    const { result, error } = await this.rpcClient.getTransactionReceipt(tx);
+    expect(error).to.be.null;
+    expect(result.length).to.be.greaterThan(0);
+    expect(result[0].excepted).to.be.equal("None");
+
+    const res = (
+      await contractERC20.methods.balanceOf(`0x${safeContractAddress}`).call()
+    )["0"];
+    expect(res).to.be.equal((BigInt(9) * BigInt(1e18)).toString());
   }
 }
