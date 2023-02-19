@@ -8,17 +8,13 @@ import {
   Transaction,
 } from "firovm-sdk";
 import { MerchantWallet, Testnet } from "../../lib";
+import { abiERC20, SafeABI, SafeProxyFactoryABI } from "./data/abi";
+import { testAddresses, testAddressMiner, testPrivkeys } from "./data/accounts";
 import {
-  abiERC20,
   byteCodeContractERC20,
-  SafeABI,
   SafeByteCode,
-  SafeProxyFactoryABI,
   SafeProxyFactoryByteCode,
-  testAddresses,
-  testAddressMiner,
-  testPrivkeys,
-} from "./data";
+} from "./data/bytecode";
 import {
   AddressZero,
   buildSafeTransaction,
@@ -339,8 +335,9 @@ class SafeContractTest {
     expect(result[0].exceptedMessage).to.be.equal("GS025");
 
     const txHash = await this.getTransactionHash(safeTx);
+
     const txApproveHash1 = await contract.methods.approveHash(txHash).send({
-      from: this.account.acc2,
+      from: this.account.acc1,
     });
     expect(txApproveHash1).to.be.a("string");
     await this.generateToAddress();
@@ -351,7 +348,7 @@ class SafeContractTest {
     expect(resultApproveHash1[0].excepted).to.be.equal("None");
 
     const txApproveHash2 = await contract.methods.approveHash(txHash).send({
-      from: this.account.acc1,
+      from: this.account.acc2,
     });
     expect(txApproveHash2).to.be.a("string");
     await this.generateToAddress();
@@ -454,8 +451,9 @@ class SafeContractTest {
 
     const txHash = await this.getTransactionHash(safeTx);
     const contractSafe = new this.client.Contract(SafeABI, safeContractAddress);
+
     const txApproveHash1 = await contractSafe.methods.approveHash(txHash).send({
-      from: this.account.acc2,
+      from: this.account.acc1,
     });
     expect(txApproveHash1).to.be.a("string");
     await this.generateToAddress();
@@ -466,7 +464,7 @@ class SafeContractTest {
     expect(resultApproveHash1[0].excepted).to.be.equal("None");
 
     const txApproveHash2 = await contractSafe.methods.approveHash(txHash).send({
-      from: this.account.acc1,
+      from: this.account.acc2,
     });
     expect(txApproveHash2).to.be.a("string");
     await this.generateToAddress();
@@ -499,9 +497,18 @@ class SafeContractTest {
     expect(result.length).to.be.greaterThan(0);
     expect(result[0].excepted).to.be.equal("None");
 
-    const res = (
-      await contractERC20.methods.balanceOf(`0x${safeContractAddress}`).call()
-    )["0"];
-    expect(res).to.be.equal((BigInt(9) * BigInt(1e18)).toString());
+    expect(
+      (
+        await contractERC20.methods.balanceOf(`0x${safeContractAddress}`).call()
+      )["0"]
+    ).to.be.equal((BigInt(9) * BigInt(1e18)).toString());
+
+    expect(
+      (
+        await contractERC20.methods
+          .balanceOf(this.account.acc4.hex_address())
+          .call()
+      )["0"]
+    ).to.be.equal((BigInt(1) * BigInt(1e18)).toString());
   }
 }
