@@ -7,7 +7,7 @@ import {
   RPCClient,
   Transaction,
 } from "firovm-sdk";
-import { MerchantWallet, Testnet } from "../../lib";
+import { Testnet } from "../../lib";
 import { abiERC20, SafeABI, SafeProxyFactoryABI } from "./data/abi";
 import { testAddresses, testAddressMiner, testPrivkeys } from "./data/accounts";
 import {
@@ -29,9 +29,7 @@ let erc20ContractAddress: string;
 @suite
 class SafeContractTest {
   constructor(
-    private mnemonic: string,
     private rpcUrl: URL,
-    private wallet: MerchantWallet,
     private rpcClient: RPCClient,
     private client: Client,
     private address: {
@@ -60,8 +58,6 @@ class SafeContractTest {
       acc5: PrivkeyAccount;
     }
   ) {
-    this.mnemonic =
-      "sand home split purity total soap solar predict talent enroll nut unable";
     this.rpcUrl = new URL("http://test:test@firovm:1234");
     this.rpcClient = new RPCClient(this.rpcUrl.href);
     this.client = new Client(this.rpcUrl.href);
@@ -182,6 +178,8 @@ class SafeContractTest {
     await this.loadWallet();
     await this.sendTo(this.account.miner, this.address.testAddress1, 20);
     await this.sendTo(this.account.miner, this.address.testAddress2, 5);
+    await this.sendTo(this.account.miner, this.address.testAddress3, 2);
+    await this.sendTo(this.account.miner, this.address.testAddress4, 2);
     await this.initSafeContract();
     await this.deployContractERC20();
   }
@@ -221,11 +219,13 @@ class SafeContractTest {
     const owners = (await contract.methods.getOwners().call())["0"];
     expect(owners).to.be.a("array");
     expect(owners.length).to.be.equal(3);
-    expect(owners).to.be.deep.equal([
-      this.account.acc1.hex_address(),
-      this.account.acc2.hex_address(),
-      this.account.acc3.hex_address(),
-    ]);
+    expect([...owners].sort()).to.be.deep.equal(
+      [
+        this.account.acc1.hex_address(),
+        this.account.acc2.hex_address(),
+        this.account.acc3.hex_address(),
+      ].sort()
+    );
   }
 
   @test
@@ -295,7 +295,7 @@ class SafeContractTest {
   @test
   async execTransaction() {
     const safeTx = buildSafeTransaction({
-      to: this.account.acc4.hex_address(),
+      to: this.account.acc5.hex_address(),
       value: 1000,
       operation: 0,
       safeTxGas: 1000000,
@@ -392,7 +392,7 @@ class SafeContractTest {
     expect(result.balance).to.be.equal(9000);
 
     const balance = await this.client.getBalance(
-      this.account.acc4.address().toString()
+      this.account.acc5.address().toString()
     );
     expect(balance).to.be.equal(1000);
   }
@@ -430,7 +430,7 @@ class SafeContractTest {
     );
     const data = contractERC20.methods
       .transfer(
-        this.account.acc4.hex_address(),
+        this.account.acc5.hex_address(),
         (BigInt(1) * BigInt(1e18)).toString()
       )
       .encodeABI();
@@ -506,9 +506,273 @@ class SafeContractTest {
     expect(
       (
         await contractERC20.methods
-          .balanceOf(this.account.acc4.hex_address())
+          .balanceOf(this.account.acc5.hex_address())
           .call()
       )["0"]
     ).to.be.equal((BigInt(1) * BigInt(1e18)).toString());
+  }
+
+  @test
+  async changeThreshold() {
+    const contractSafe = new this.client.Contract(SafeABI, safeContractAddress);
+    const data = contractSafe.methods.changeThreshold(3).encodeABI();
+
+    const safeTx = buildSafeTransaction({
+      to: `0x${safeContractAddress}`,
+      value: 0,
+      data,
+      safeTxGas: 1000000,
+      refundReceiver: this.account.acc1.hex_address(),
+      nonce: await this.safeNonce(),
+    });
+    const signatures = [
+      safeApproveHash(this.account.acc1.hex_address()),
+      safeApproveHash(this.account.acc2.hex_address()),
+    ];
+    const signatureBytes = buildSignatureBytes(signatures);
+
+    const txHash = await this.getTransactionHash(safeTx);
+
+    const txApproveHash1 = await contractSafe.methods.approveHash(txHash).send({
+      from: this.account.acc1,
+    });
+    expect(txApproveHash1).to.be.a("string");
+    await this.generateToAddress();
+    const { result: resultApproveHash1, error: errorApproveHash1 } =
+      await this.rpcClient.getTransactionReceipt(txApproveHash1);
+    expect(errorApproveHash1).to.be.null;
+    expect(resultApproveHash1.length).to.be.greaterThan(0);
+    expect(resultApproveHash1[0].excepted).to.be.equal("None");
+
+    const txApproveHash2 = await contractSafe.methods.approveHash(txHash).send({
+      from: this.account.acc2,
+    });
+    expect(txApproveHash2).to.be.a("string");
+    await this.generateToAddress();
+    const { result: resultApproveHash2, error: errorApproveHash2 } =
+      await this.rpcClient.getTransactionReceipt(txApproveHash2);
+    expect(errorApproveHash2).to.be.null;
+    expect(resultApproveHash2.length).to.be.greaterThan(0);
+    expect(resultApproveHash2[0].excepted).to.be.equal("None");
+
+    const tx = await contractSafe.methods
+      .execTransaction(
+        safeTx.to,
+        safeTx.value,
+        safeTx.data,
+        safeTx.operation,
+        safeTx.safeTxGas,
+        safeTx.baseGas,
+        safeTx.gasPrice,
+        safeTx.gasToken,
+        safeTx.refundReceiver,
+        signatureBytes
+      )
+      .send({
+        from: this.account.acc1,
+      });
+    expect(tx).to.be.a("string");
+    await this.generateToAddress();
+    const { result, error } = await this.rpcClient.getTransactionReceipt(tx);
+    expect(error).to.be.null;
+    expect(result.length).to.be.greaterThan(0);
+    expect(result[0].excepted).to.be.equal("None");
+
+    expect((await contractSafe.methods.getThreshold().call())["0"]).to.be.equal(
+      "3"
+    );
+  }
+
+  @test
+  async addOwnerWithThreshold() {
+    const contractSafe = new this.client.Contract(SafeABI, safeContractAddress);
+    const data = contractSafe.methods
+      .addOwnerWithThreshold(this.account.acc4.hex_address(), 3)
+      .encodeABI();
+
+    const safeTx = buildSafeTransaction({
+      to: `0x${safeContractAddress}`,
+      value: 0,
+      data,
+      safeTxGas: 1000000,
+      refundReceiver: this.account.acc1.hex_address(),
+      nonce: await this.safeNonce(),
+    });
+    const signatures = [
+      safeApproveHash(this.account.acc1.hex_address()),
+      safeApproveHash(this.account.acc2.hex_address()),
+      safeApproveHash(this.account.acc3.hex_address()),
+    ];
+    const signatureBytes = buildSignatureBytes(signatures);
+
+    const txHash = await this.getTransactionHash(safeTx);
+
+    const txApproveHash1 = await contractSafe.methods.approveHash(txHash).send({
+      from: this.account.acc1,
+    });
+    expect(txApproveHash1).to.be.a("string");
+    await this.generateToAddress();
+    const { result: resultApproveHash1, error: errorApproveHash1 } =
+      await this.rpcClient.getTransactionReceipt(txApproveHash1);
+    expect(errorApproveHash1).to.be.null;
+    expect(resultApproveHash1.length).to.be.greaterThan(0);
+    expect(resultApproveHash1[0].excepted).to.be.equal("None");
+
+    const txApproveHash2 = await contractSafe.methods.approveHash(txHash).send({
+      from: this.account.acc2,
+    });
+    expect(txApproveHash2).to.be.a("string");
+    await this.generateToAddress();
+    const { result: resultApproveHash2, error: errorApproveHash2 } =
+      await this.rpcClient.getTransactionReceipt(txApproveHash2);
+    expect(errorApproveHash2).to.be.null;
+    expect(resultApproveHash2.length).to.be.greaterThan(0);
+    expect(resultApproveHash2[0].excepted).to.be.equal("None");
+
+    const txApproveHash3 = await contractSafe.methods.approveHash(txHash).send({
+      from: this.account.acc3,
+    });
+    expect(txApproveHash3).to.be.a("string");
+    await this.generateToAddress();
+    const { result: resultApproveHash3, error: errorApproveHash3 } =
+      await this.rpcClient.getTransactionReceipt(txApproveHash3);
+    expect(errorApproveHash3).to.be.null;
+    expect(resultApproveHash3.length).to.be.greaterThan(0);
+    expect(resultApproveHash3[0].excepted).to.be.equal("None");
+
+    const tx = await contractSafe.methods
+      .execTransaction(
+        safeTx.to,
+        safeTx.value,
+        safeTx.data,
+        safeTx.operation,
+        safeTx.safeTxGas,
+        safeTx.baseGas,
+        safeTx.gasPrice,
+        safeTx.gasToken,
+        safeTx.refundReceiver,
+        signatureBytes
+      )
+      .send({
+        from: this.account.acc1,
+      });
+    expect(tx).to.be.a("string");
+    await this.generateToAddress();
+    const { result, error } = await this.rpcClient.getTransactionReceipt(tx);
+    expect(error).to.be.null;
+    expect(result.length).to.be.greaterThan(0);
+    expect(result[0].excepted).to.be.equal("None");
+
+    expect((await contractSafe.methods.getThreshold().call())["0"]).to.be.equal(
+      "3"
+    );
+
+    const owners = (await contractSafe.methods.getOwners().call())["0"];
+    expect(owners).to.be.a("array");
+    expect(owners.length).to.be.equal(4);
+    expect([...owners].sort()).to.be.deep.equal(
+      [
+        this.account.acc1.hex_address(),
+        this.account.acc2.hex_address(),
+        this.account.acc3.hex_address(),
+        this.account.acc4.hex_address(),
+      ].sort()
+    );
+  }
+
+  @test
+  async removeOwnerWithThreshold() {
+    const contractSafe = new this.client.Contract(SafeABI, safeContractAddress);
+    const data = contractSafe.methods
+      .removeOwnerWithThreshold(this.account.acc3.hex_address(), 2)
+      .encodeABI();
+
+    const safeTx = buildSafeTransaction({
+      to: `0x${safeContractAddress}`,
+      value: 0,
+      data,
+      safeTxGas: 1000000,
+      refundReceiver: this.account.acc1.hex_address(),
+      nonce: await this.safeNonce(),
+    });
+    const signatures = [
+      safeApproveHash(this.account.acc1.hex_address()),
+      safeApproveHash(this.account.acc2.hex_address()),
+      safeApproveHash(this.account.acc4.hex_address()),
+    ];
+    const signatureBytes = buildSignatureBytes(signatures);
+
+    const txHash = await this.getTransactionHash(safeTx);
+
+    const txApproveHash1 = await contractSafe.methods.approveHash(txHash).send({
+      from: this.account.acc1,
+    });
+    expect(txApproveHash1).to.be.a("string");
+    await this.generateToAddress();
+    const { result: resultApproveHash1, error: errorApproveHash1 } =
+      await this.rpcClient.getTransactionReceipt(txApproveHash1);
+    expect(errorApproveHash1).to.be.null;
+    expect(resultApproveHash1.length).to.be.greaterThan(0);
+    expect(resultApproveHash1[0].excepted).to.be.equal("None");
+
+    const txApproveHash2 = await contractSafe.methods.approveHash(txHash).send({
+      from: this.account.acc2,
+    });
+    expect(txApproveHash2).to.be.a("string");
+    await this.generateToAddress();
+    const { result: resultApproveHash2, error: errorApproveHash2 } =
+      await this.rpcClient.getTransactionReceipt(txApproveHash2);
+    expect(errorApproveHash2).to.be.null;
+    expect(resultApproveHash2.length).to.be.greaterThan(0);
+    expect(resultApproveHash2[0].excepted).to.be.equal("None");
+
+    const txApproveHash4 = await contractSafe.methods.approveHash(txHash).send({
+      from: this.account.acc4,
+    });
+    expect(txApproveHash4).to.be.a("string");
+    await this.generateToAddress();
+    const { result: resultApproveHash4, error: errorApproveHash4 } =
+      await this.rpcClient.getTransactionReceipt(txApproveHash4);
+    expect(errorApproveHash4).to.be.null;
+    expect(resultApproveHash4.length).to.be.greaterThan(0);
+    expect(resultApproveHash4[0].excepted).to.be.equal("None");
+
+    const tx = await contractSafe.methods
+      .execTransaction(
+        safeTx.to,
+        safeTx.value,
+        safeTx.data,
+        safeTx.operation,
+        safeTx.safeTxGas,
+        safeTx.baseGas,
+        safeTx.gasPrice,
+        safeTx.gasToken,
+        safeTx.refundReceiver,
+        signatureBytes
+      )
+      .send({
+        from: this.account.acc1,
+      });
+    expect(tx).to.be.a("string");
+    await this.generateToAddress();
+    const { result, error } = await this.rpcClient.getTransactionReceipt(tx);
+    expect(error).to.be.null;
+    expect(result.length).to.be.greaterThan(0);
+    expect(result[0].excepted).to.be.equal("None");
+
+    expect((await contractSafe.methods.getThreshold().call())["0"]).to.be.equal(
+      "2"
+    );
+
+    const owners = (await contractSafe.methods.getOwners().call())["0"];
+    expect(owners).to.be.a("array");
+    expect(owners.length).to.be.equal(3);
+    expect([...owners].sort()).to.be.deep.equal(
+      [
+        this.account.acc1.hex_address(),
+        this.account.acc2.hex_address(),
+        this.account.acc4.hex_address(),
+      ].sort()
+    );
   }
 }

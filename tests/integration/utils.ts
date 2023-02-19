@@ -26,6 +26,7 @@ export const fromHexAddress = (
 };
 
 export const AddressZero = "0x0000000000000000000000000000000000000000";
+export const AddressOne = "0x0000000000000000000000000000000000000001";
 
 export interface SafeSignature {
   signer: string;
