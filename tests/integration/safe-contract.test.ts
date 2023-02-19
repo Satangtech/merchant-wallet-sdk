@@ -23,8 +23,8 @@ import {
   safeApproveHash,
 } from "./utils";
 
-let safeContractAddress: string;
-let erc20ContractAddress: string;
+let SafeContractAddress: string;
+let Erc20ContractAddress: string;
 
 @suite
 class SafeContractTest {
@@ -149,7 +149,7 @@ class SafeContractTest {
     expect(errorCreate).to.be.null;
     expect(resultCreate.length).to.be.greaterThan(0);
     expect(resultCreate[0].excepted).to.be.equal("None");
-    safeContractAddress = resultCreate[0].log[0].data.split(
+    SafeContractAddress = resultCreate[0].log[0].data.split(
       "000000000000000000000000"
     )[1];
   }
@@ -164,7 +164,7 @@ class SafeContractTest {
     const response = await this.rpcClient.getTransactionReceipt(txid);
     expect(response.result.length).to.be.greaterThan(0);
     expect(response.result[0].contractAddress).to.be.a("string");
-    erc20ContractAddress = response.result[0].contractAddress;
+    Erc20ContractAddress = response.result[0].contractAddress;
   }
 
   async sendTo(acc: PrivkeyAccount, to: string, count: number = 1) {
@@ -186,7 +186,7 @@ class SafeContractTest {
 
   @test
   async setup() {
-    const contract = new this.client.Contract(SafeABI, safeContractAddress);
+    const contract = new this.client.Contract(SafeABI, SafeContractAddress);
     const tx = await contract.methods
       .setup(
         [
@@ -215,7 +215,7 @@ class SafeContractTest {
 
   @test
   async getOwners() {
-    const contract = new this.client.Contract(SafeABI, safeContractAddress);
+    const contract = new this.client.Contract(SafeABI, SafeContractAddress);
     const owners = (await contract.methods.getOwners().call())["0"];
     expect(owners).to.be.a("array");
     expect(owners.length).to.be.equal(3);
@@ -230,13 +230,13 @@ class SafeContractTest {
 
   @test
   async getThreshold() {
-    const contract = new this.client.Contract(SafeABI, safeContractAddress);
+    const contract = new this.client.Contract(SafeABI, SafeContractAddress);
     const threshold = (await contract.methods.getThreshold().call())["0"];
     expect(threshold).to.be.equal("2");
   }
 
   async safeNonce() {
-    const contract = new this.client.Contract(SafeABI, safeContractAddress);
+    const contract = new this.client.Contract(SafeABI, SafeContractAddress);
     return Number((await contract.methods.nonce().call())["0"]);
   }
 
@@ -248,14 +248,14 @@ class SafeContractTest {
 
   @test
   async depositToSafe() {
-    const contract = new this.client.Contract(SafeABI, safeContractAddress);
+    const contract = new this.client.Contract(SafeABI, SafeContractAddress);
     await contract.methods.deposit().send({
       from: this.account.acc1,
       value: 10000,
     });
     await this.generateToAddress();
     const { result, error } = await this.rpcClient.rpc("getaccountinfo", [
-      safeContractAddress,
+      SafeContractAddress,
     ]);
     expect(error).to.be.null;
     expect(result.balance).to.be.equal(10000);
@@ -273,7 +273,7 @@ class SafeContractTest {
     refundReceiver: string;
     nonce: number;
   }) {
-    const contract = new this.client.Contract(SafeABI, safeContractAddress);
+    const contract = new this.client.Contract(SafeABI, SafeContractAddress);
     return (
       await contract.methods
         .getTransactionHash(
@@ -297,9 +297,6 @@ class SafeContractTest {
     const safeTx = buildSafeTransaction({
       to: this.account.acc5.hex_address(),
       value: 1000,
-      operation: 0,
-      safeTxGas: 1000000,
-      refundReceiver: this.account.acc1.hex_address(),
       nonce: await this.safeNonce(),
     });
 
@@ -308,7 +305,7 @@ class SafeContractTest {
       safeApproveHash(this.account.acc2.hex_address()),
     ];
     const signatureBytes = buildSignatureBytes(signatures);
-    const contract = new this.client.Contract(SafeABI, safeContractAddress);
+    const contract = new this.client.Contract(SafeABI, SafeContractAddress);
 
     const tx = await contract.methods
       .execTransaction(
@@ -386,7 +383,7 @@ class SafeContractTest {
   @test
   async getAccountInfo() {
     const { result, error } = await this.rpcClient.rpc("getaccountinfo", [
-      safeContractAddress,
+      SafeContractAddress,
     ]);
     expect(error).to.be.null;
     expect(result.balance).to.be.equal(9000);
@@ -399,10 +396,10 @@ class SafeContractTest {
 
   @test
   async sendTokenToSafe() {
-    const contract = new this.client.Contract(abiERC20, erc20ContractAddress);
+    const contract = new this.client.Contract(abiERC20, Erc20ContractAddress);
     const txid = await contract.methods
       .transfer(
-        `0x${safeContractAddress}`,
+        `0x${SafeContractAddress}`,
         (BigInt(10) * BigInt(1e18)).toString()
       )
       .send({
@@ -417,7 +414,7 @@ class SafeContractTest {
     expect(result[0].excepted).to.be.equal("None");
 
     const res = (
-      await contract.methods.balanceOf(`0x${safeContractAddress}`).call()
+      await contract.methods.balanceOf(`0x${SafeContractAddress}`).call()
     )["0"];
     expect(res).to.be.equal((BigInt(10) * BigInt(1e18)).toString());
   }
@@ -426,7 +423,7 @@ class SafeContractTest {
   async sendTokenFromSafe() {
     const contractERC20 = new this.client.Contract(
       abiERC20,
-      erc20ContractAddress
+      Erc20ContractAddress
     );
     const data = contractERC20.methods
       .transfer(
@@ -436,11 +433,8 @@ class SafeContractTest {
       .encodeABI();
 
     const safeTx = buildSafeTransaction({
-      to: `0x${erc20ContractAddress}`,
-      value: 0,
+      to: `0x${Erc20ContractAddress}`,
       data,
-      safeTxGas: 1000000,
-      refundReceiver: this.account.acc1.hex_address(),
       nonce: await this.safeNonce(),
     });
     const signatures = [
@@ -450,7 +444,7 @@ class SafeContractTest {
     const signatureBytes = buildSignatureBytes(signatures);
 
     const txHash = await this.getTransactionHash(safeTx);
-    const contractSafe = new this.client.Contract(SafeABI, safeContractAddress);
+    const contractSafe = new this.client.Contract(SafeABI, SafeContractAddress);
 
     const txApproveHash1 = await contractSafe.methods.approveHash(txHash).send({
       from: this.account.acc1,
@@ -499,7 +493,7 @@ class SafeContractTest {
 
     expect(
       (
-        await contractERC20.methods.balanceOf(`0x${safeContractAddress}`).call()
+        await contractERC20.methods.balanceOf(`0x${SafeContractAddress}`).call()
       )["0"]
     ).to.be.equal((BigInt(9) * BigInt(1e18)).toString());
 
@@ -514,15 +508,12 @@ class SafeContractTest {
 
   @test
   async changeThreshold() {
-    const contractSafe = new this.client.Contract(SafeABI, safeContractAddress);
+    const contractSafe = new this.client.Contract(SafeABI, SafeContractAddress);
     const data = contractSafe.methods.changeThreshold(3).encodeABI();
 
     const safeTx = buildSafeTransaction({
-      to: `0x${safeContractAddress}`,
-      value: 0,
+      to: `0x${SafeContractAddress}`,
       data,
-      safeTxGas: 1000000,
-      refundReceiver: this.account.acc1.hex_address(),
       nonce: await this.safeNonce(),
     });
     const signatures = [
@@ -585,17 +576,14 @@ class SafeContractTest {
 
   @test
   async addOwnerWithThreshold() {
-    const contractSafe = new this.client.Contract(SafeABI, safeContractAddress);
+    const contractSafe = new this.client.Contract(SafeABI, SafeContractAddress);
     const data = contractSafe.methods
       .addOwnerWithThreshold(this.account.acc4.hex_address(), 3)
       .encodeABI();
 
     const safeTx = buildSafeTransaction({
-      to: `0x${safeContractAddress}`,
-      value: 0,
+      to: `0x${SafeContractAddress}`,
       data,
-      safeTxGas: 1000000,
-      refundReceiver: this.account.acc1.hex_address(),
       nonce: await this.safeNonce(),
     });
     const signatures = [
@@ -682,17 +670,14 @@ class SafeContractTest {
 
   @test
   async removeOwnerWithThreshold() {
-    const contractSafe = new this.client.Contract(SafeABI, safeContractAddress);
+    const contractSafe = new this.client.Contract(SafeABI, SafeContractAddress);
     const data = contractSafe.methods
       .removeOwnerWithThreshold(this.account.acc3.hex_address(), 2)
       .encodeABI();
 
     const safeTx = buildSafeTransaction({
-      to: `0x${safeContractAddress}`,
-      value: 0,
+      to: `0x${SafeContractAddress}`,
       data,
-      safeTxGas: 1000000,
-      refundReceiver: this.account.acc1.hex_address(),
       nonce: await this.safeNonce(),
     });
     const signatures = [
