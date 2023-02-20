@@ -18,7 +18,7 @@ import {
 import {
   AddressOne,
   AddressZero,
-  buildSafeTransaction,
+  buildTransaction,
   buildSignatureBytes,
   getRandomIntAsString,
   safeApproveHash,
@@ -293,7 +293,7 @@ class SafeContractTest {
 
   @test
   async execTransaction() {
-    const safeTx = buildSafeTransaction({
+    const safeTx = buildTransaction({
       to: this.account.acc5.hex_address(),
       value: 1000,
       nonce: await this.safeNonce(),
@@ -431,7 +431,7 @@ class SafeContractTest {
       )
       .encodeABI();
 
-    const safeTx = buildSafeTransaction({
+    const safeTx = buildTransaction({
       to: `0x${Erc20ContractAddress}`,
       data,
       nonce: await this.safeNonce(),
@@ -510,7 +510,7 @@ class SafeContractTest {
     const contractSafe = new this.client.Contract(SafeABI, SafeContractAddress);
     const data = contractSafe.methods.changeThreshold(3).encodeABI();
 
-    const safeTx = buildSafeTransaction({
+    const safeTx = buildTransaction({
       to: `0x${SafeContractAddress}`,
       data,
       nonce: await this.safeNonce(),
@@ -580,7 +580,7 @@ class SafeContractTest {
       .addOwnerWithThreshold(this.account.acc4.hex_address(), 3)
       .encodeABI();
 
-    const safeTx = buildSafeTransaction({
+    const safeTx = buildTransaction({
       to: `0x${SafeContractAddress}`,
       data,
       nonce: await this.safeNonce(),
@@ -687,7 +687,7 @@ class SafeContractTest {
       .removeOwner(prevOwner, owner, 2)
       .encodeABI();
 
-    const safeTx = buildSafeTransaction({
+    const safeTx = buildTransaction({
       to: `0x${SafeContractAddress}`,
       data,
       nonce: await this.safeNonce(),

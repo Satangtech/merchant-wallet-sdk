@@ -79,7 +79,7 @@ export const buildSignatureBytes = (signatures: SafeSignature[]): string => {
   return signatureBytes + dynamicBytes;
 };
 
-export const buildSafeTransaction = (template: {
+export const buildTransaction = (template: {
   to: string;
   value?: number | string;
   data?: string;
