@@ -16,6 +16,7 @@ import {
   SafeProxyFactoryByteCode,
 } from "./data/bytecode";
 import {
+  AddressOne,
   AddressZero,
   buildSafeTransaction,
   buildSignatureBytes,
@@ -219,13 +220,11 @@ class SafeContractTest {
     const owners = (await contract.methods.getOwners().call())["0"];
     expect(owners).to.be.a("array");
     expect(owners.length).to.be.equal(3);
-    expect([...owners].sort()).to.be.deep.equal(
-      [
-        this.account.acc1.hex_address(),
-        this.account.acc2.hex_address(),
-        this.account.acc3.hex_address(),
-      ].sort()
-    );
+    expect(owners).to.be.deep.equal([
+      this.account.acc1.hex_address(),
+      this.account.acc2.hex_address(),
+      this.account.acc3.hex_address(),
+    ]);
   }
 
   @test
@@ -658,21 +657,34 @@ class SafeContractTest {
     const owners = (await contractSafe.methods.getOwners().call())["0"];
     expect(owners).to.be.a("array");
     expect(owners.length).to.be.equal(4);
-    expect([...owners].sort()).to.be.deep.equal(
-      [
-        this.account.acc1.hex_address(),
-        this.account.acc2.hex_address(),
-        this.account.acc3.hex_address(),
-        this.account.acc4.hex_address(),
-      ].sort()
-    );
+    expect(owners).to.be.deep.equal([
+      this.account.acc4.hex_address(),
+      this.account.acc1.hex_address(),
+      this.account.acc2.hex_address(),
+      this.account.acc3.hex_address(),
+    ]);
+  }
+
+  async getPrevOwner(owner: string) {
+    const contractSafe = new this.client.Contract(SafeABI, SafeContractAddress);
+    const owners = (await contractSafe.methods.getOwners().call())["0"];
+    for (let i = 0; i < owners.length; i++) {
+      if (i === 0 && owners[i] === owner) {
+        return AddressOne;
+      }
+      if (owners[i] === owner) {
+        return owners[i - 1];
+      }
+    }
   }
 
   @test
-  async removeOwnerWithThreshold() {
+  async removeOwner() {
     const contractSafe = new this.client.Contract(SafeABI, SafeContractAddress);
+    const owner = this.account.acc3.hex_address();
+    const prevOwner = await this.getPrevOwner(owner);
     const data = contractSafe.methods
-      .removeOwnerWithThreshold(this.account.acc3.hex_address(), 2)
+      .removeOwner(prevOwner, owner, 2)
       .encodeABI();
 
     const safeTx = buildSafeTransaction({
@@ -752,12 +764,10 @@ class SafeContractTest {
     const owners = (await contractSafe.methods.getOwners().call())["0"];
     expect(owners).to.be.a("array");
     expect(owners.length).to.be.equal(3);
-    expect([...owners].sort()).to.be.deep.equal(
-      [
-        this.account.acc1.hex_address(),
-        this.account.acc2.hex_address(),
-        this.account.acc4.hex_address(),
-      ].sort()
-    );
+    expect(owners).to.be.deep.equal([
+      this.account.acc4.hex_address(),
+      this.account.acc1.hex_address(),
+      this.account.acc2.hex_address(),
+    ]);
   }
 }

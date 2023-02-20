@@ -693,25 +693,6 @@ export const SafeABI = [
   {
     inputs: [
       {
-        internalType: "address",
-        name: "owner",
-        type: "address",
-      },
-    ],
-    name: "getPrevOwner",
-    outputs: [
-      {
-        internalType: "address",
-        name: "",
-        type: "address",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
         internalType: "uint256",
         name: "offset",
         type: "uint256",
@@ -880,24 +861,6 @@ export const SafeABI = [
       },
     ],
     name: "removeOwner",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "address",
-        name: "owner",
-        type: "address",
-      },
-      {
-        internalType: "uint256",
-        name: "_threshold",
-        type: "uint256",
-      },
-    ],
-    name: "removeOwnerWithThreshold",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",
