@@ -8,47 +8,66 @@ npm install merchant-wallet-sdk
 
 ### Example
 
-- Create a merchant wallet
+#### Create a merchant wallet
 
 ```typescript
-import { MerchantWallet } from "merchant-wallet-sdk";
-import { Context, PrivkeyAccount, Network } from "firovm-sdk";
+import { MerchantWallet, Context } from "merchant-wallet-sdk";
+import { PrivkeyAccount, Network, Client } from "firovm-sdk";
 
 const rpcUrl = "https://rpc.firovm.com";
-const owner = ["0xadd1", "0xadd2", "0xadd3"];
-const context = new Context().withNetwork(Network.Testnet);
-const account = new PrivkeyAccount(context, "privkey");
-const threshold = 2;
+const context = new Context()
+  .withNetwork(Network.Testnet)
+  .withProxyAddress("0x0000000000000000000000000000ProxyAddress");
+const client = new Client(rpcUrl);
+const account = new PrivkeyAccount(context, "privkey"); // or MnemonicAccount
 
-const merchantWallet = new MerchantWallet(rpcUrl, account, owner, threshold);
+interface TxOptions {
+  GasPrice?: number;
+  GasLimit?: number;
+}
+
+const merchantWallet = new MerchantWallet(context, client, account);
+const createWalletTxId = await merchantWallet.deploy(TxOptions?);
 ```
 
-- Recover a merchant wallet
+#### Recover a merchant wallet
 
 ```typescript
-const merchantWalletAddress = "0xMerchantWalletAddress";
+const merchantAddress = "0x0000000000000000000MerchantWalletAddress";
 const merchantWallet = new MerchantWallet(
-  rpcUrl,
+  context,
+  client,
   account,
-  owner,
-  threshold,
-  merchantWalletAddress
+  merchantAddress
 );
 ```
 
-- Get Threshold of the merchant wallet
+#### Setup a merchant wallet
 
 ```typescript
-const threshold = await merchantWallet.getThreshold();
+const owner = [
+  "0x000000000000000000000000000000000000add1",
+  "0x000000000000000000000000000000000000add2",
+  "0x000000000000000000000000000000000000add3",
+];
+const threshold = 2;
+
+const setupTxId = await merchantWallet.setup(owner, threshold, TxOptions?);
 ```
 
-- Get Owner of the merchant wallet
+#### Get Threshold of the merchant wallet
 
 ```typescript
-const owner = await merchantWallet.getOwner();
+const threshold = await merchantWallet.getThreshold(); // cached
 ```
 
-- Deposit to the merchant wallet
+#### Get Owner of the merchant wallet
+
+```typescript
+const owner = await merchantWallet.getOwner(); // cached
+```
+
+#### Deposit to the merchant wallet
 
 ```typescript
 const amount = 100000000; // satoshi
@@ -63,7 +82,7 @@ const txid = await contract.methods
   });
 ```
 
-- Get Balance of the merchant wallet
+#### Get Balance of the merchant wallet
 
 ```typescript
 // Get balance of natives
@@ -74,11 +93,11 @@ const erc20 = new client.Contract(abiERC20, Erc20ContractAddress);
 const balance = await erc20.methods.balanceOf(merchantWallet.address).call();
 ```
 
-- Create Transaction and Approve Transaction
+#### Create Transaction and Approve Transaction
 
 ```typescript
 const value = 10000; // satoshi
-const to = "0xadd4";
+const to = "0x000000000000000000000000000000000000add4";
 
 const merchantTx = merchantWallet.buildTransaction(to, value);
 const merchantTxHash = await merchantWallet.getTransactionHash(merchantTx);
@@ -89,7 +108,7 @@ const merchantTxHash = await merchantWallet.getTransactionHash(merchantTx);
 const txIdApprove = await merchantWallet.approveTransaction(merchantTxHash);
 ```
 
-- Execute Transaction of the merchant wallet
+#### Execute Transaction of the merchant wallet
 
 ```typescript
 const merchantTx = merchantWallet.buildTransaction(to, value);
@@ -97,19 +116,22 @@ const merchantTx = merchantWallet.buildTransaction(to, value);
 // Can execute transaction when approved by threshold number of owners
 // In this case, threshold is 2, so need to approve by 2 owners
 // Owner Add1 and Add2 already approved transaction hash
-const addressApprover = ["0xadd1", "0xadd2"];
-const txIdExecute = await merchantWallet.executeTransaction(
+const addressApprover = [
+  "0x000000000000000000000000000000000000add1",
+  "0x000000000000000000000000000000000000add2",
+];
+const executeTxId = await merchantWallet.executeTransaction(
   merchantTx,
   addressApprover
 );
 ```
 
-- Execute Transaction with ERC20 Token
+#### Execute Transaction with ERC20 Token
 
 ```typescript
 const erc20 = new client.Contract(abiERC20, Erc20ContractAddress);
 const value = (BigInt(10) * BigInt(1e18)).toString();
-const to = "0xadd4";
+const to = "0x000000000000000000000000000000000000add4";
 const data = erc20.methods.transfer(to, value).encodeABI();
 
 const merchantTx = merchantWallet.buildTransaction(
@@ -121,14 +143,17 @@ const merchantTx = merchantWallet.buildTransaction(
 // getTransactionHash and approveTransaction is the same
 
 // Owner Add1 and Add2 already approved transaction hash
-const addressApprover = ["0xadd1", "0xadd2"];
-const txIdExecute = await merchantWallet.executeTransaction(
+const addressApprover = [
+  "0x000000000000000000000000000000000000add1",
+  "0x000000000000000000000000000000000000add2",
+];
+const executeTxId = await merchantWallet.executeTransaction(
   merchantTx,
   addressApprover
 );
 ```
 
-- Change Threshold of the merchant wallet
+#### Change Threshold of the merchant wallet
 
 ```typescript
 const newThreshold = 3;
@@ -137,40 +162,51 @@ const changeThresholdTx = merchantWallet.changeThreshold(newThreshold);
 // getTransactionHash and approveTransaction is the same
 
 // Owner Add1 and Add3 already approved transaction hash
-const addressApprover = ["0xadd1", "0xadd3"];
-const txIdExecute = await merchantWallet.executeTransaction(
+const addressApprover = [
+  "0x000000000000000000000000000000000000add1",
+  "0x000000000000000000000000000000000000add3",
+];
+const executeTxId = await merchantWallet.executeTransaction(
   changeThresholdTx,
   addressApprover
 );
 ```
 
-- Add Owner to the merchant wallet
+#### Add Owner to the merchant wallet
 
 ```typescript
-const newOwner = "0xadd4";
+const newOwner = "0x000000000000000000000000000000000000add4";
 const newThreshold = 3;
 const addOwnerTx = merchantWallet.addOwner(newOwner, newThreshold);
 
 // getTransactionHash and approveTransaction is the same
 
-const addressApprover = ["0xadd1", "0xadd2", "0xadd3"];
-const txIdExecute = await merchantWallet.executeTransaction(
+const addressApprover = [
+  "0x000000000000000000000000000000000000add1",
+  "0x000000000000000000000000000000000000add2",
+  "0x000000000000000000000000000000000000add3",
+];
+const executeTxId = await merchantWallet.executeTransaction(
   addOwnerTx,
   addressApprover
 );
 ```
 
-- Remove Owner from the merchant wallet
+#### Remove Owner from the merchant wallet
 
 ```typescript
-const ownerToRemove = "0xadd3";
+const ownerToRemove = "0x000000000000000000000000000000000000add3";
 const newThreshold = 2;
 const removeOwnerTx = merchantWallet.removeOwner(ownerToRemove, newThreshold);
 
 // getTransactionHash and approveTransaction is the same
 
-const addressApprover = ["0xadd1", "0xadd2", "0xadd4"];
-const txIdExecute = await merchantWallet.executeTransaction(
+const addressApprover = [
+  "0x000000000000000000000000000000000000add1",
+  "0x000000000000000000000000000000000000add2",
+  "0x000000000000000000000000000000000000add4",
+];
+const executeTxId = await merchantWallet.executeTransaction(
   removeOwnerTx,
   addressApprover
 );
