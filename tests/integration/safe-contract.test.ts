@@ -168,19 +168,33 @@ class SafeContractTest {
     Erc20ContractAddress = response.result[0].contractAddress;
   }
 
-  async sendTo(acc: PrivkeyAccount, to: string, count: number = 1) {
-    for (let i = 0; i < count; i++) {
-      await this.sendToAddress(acc, to, 100 * 1e8);
-    }
+  async before() {
+    await this.generateToAddress();
   }
 
   @test
   async init() {
     await this.loadWallet();
-    await this.sendTo(this.account.miner, this.address.testAddress1, 20);
-    await this.sendTo(this.account.miner, this.address.testAddress2, 5);
-    await this.sendTo(this.account.miner, this.address.testAddress3, 2);
-    await this.sendTo(this.account.miner, this.address.testAddress4, 2);
+    await this.sendToAddress(
+      this.account.miner,
+      this.address.testAddress1,
+      10000 * 1e8
+    );
+    await this.sendToAddress(
+      this.account.acc1,
+      this.address.testAddress2,
+      1000 * 1e8
+    );
+    await this.sendToAddress(
+      this.account.acc1,
+      this.address.testAddress3,
+      1000 * 1e8
+    );
+    await this.sendToAddress(
+      this.account.acc1,
+      this.address.testAddress4,
+      1000 * 1e8
+    );
     await this.initSafeContract();
     await this.deployContractERC20();
   }
