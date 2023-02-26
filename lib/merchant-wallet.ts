@@ -8,6 +8,7 @@ import {
   getRandomIntAsString,
   MerchantTransaction,
   approveHash,
+  AddressOne,
 } from "./utils";
 
 export interface TxOptions {
@@ -101,15 +102,12 @@ export class MerchantWallet {
     threshold: number,
     options: TxOptions = {}
   ): Promise<string> {
-    if (this._address === "") {
-      throw new Error("Address not set");
-    }
     if (owners.length < threshold || owners.length < 1) {
       throw new Error("Invalid owners or threshold");
     }
 
     const sendOptions = this.getOptions(options);
-    const contract = new this.client.Contract(SafeABI, this._address);
+    const contract = new this.client.Contract(SafeABI, await this.address());
     const txId = await contract.methods
       .setup(
         owners,
@@ -130,31 +128,19 @@ export class MerchantWallet {
   }
 
   async getOwners(): Promise<string[]> {
-    if (this._address === "") {
-      throw new Error("Address not set");
-    }
-
-    const contract = new this.client.Contract(SafeABI, this._address);
+    const contract = new this.client.Contract(SafeABI, await this.address());
     this.owners = (await contract.methods.getOwners().call())["0"];
     return this.owners;
   }
 
   async getThreshold(): Promise<number> {
-    if (this._address === "") {
-      throw new Error("Address not set");
-    }
-
-    const contract = new this.client.Contract(SafeABI, this._address);
+    const contract = new this.client.Contract(SafeABI, await this.address());
     this.threshold = (await contract.methods.getThreshold().call())["0"];
     return this.threshold;
   }
 
   async getNonce(): Promise<number> {
-    if (this._address === "") {
-      throw new Error("Address not set");
-    }
-
-    const contract = new this.client.Contract(SafeABI, this._address);
+    const contract = new this.client.Contract(SafeABI, await this.address());
     return (await contract.methods.nonce().call())["0"];
   }
 
@@ -172,11 +158,7 @@ export class MerchantWallet {
   }
 
   async getTransactionHash(tx: MerchantTransaction): Promise<string> {
-    if (this._address === "") {
-      throw new Error("Address not set");
-    }
-
-    const contract = new this.client.Contract(SafeABI, this._address);
+    const contract = new this.client.Contract(SafeABI, await this.address());
     return (
       await contract.methods
         .getTransactionHash(
@@ -199,12 +181,8 @@ export class MerchantWallet {
     txHash: string,
     options: TxOptions = {}
   ): Promise<string> {
-    if (this._address === "") {
-      throw new Error("Address not set");
-    }
-
     const sendOptions = this.getOptions(options);
-    const contract = new this.client.Contract(SafeABI, this._address);
+    const contract = new this.client.Contract(SafeABI, await this.address());
     return await contract.methods.approveHash(txHash).send(sendOptions);
   }
 
@@ -213,9 +191,6 @@ export class MerchantWallet {
     addressApprover: string[],
     options: TxOptions = {}
   ) {
-    if (this._address === "") {
-      throw new Error("Address not set");
-    }
     if (addressApprover.length < this.threshold) {
       throw new Error("Not enough approvers");
     }
@@ -227,7 +202,7 @@ export class MerchantWallet {
     const signatureBytes = buildSignatureBytes(signatures);
 
     const sendOptions = this.getOptions(options);
-    const contract = new this.client.Contract(SafeABI, this._address);
+    const contract = new this.client.Contract(SafeABI, await this.address());
     return await contract.methods
       .execTransaction(
         tx.to,
@@ -245,10 +220,6 @@ export class MerchantWallet {
   }
 
   async getBalance(): Promise<number> {
-    if (this._address === "") {
-      throw new Error("Address not set");
-    }
-
     const { result, error } = await this.client.rpcClient.rpc(
       "getaccountinfo",
       [this._address.replace("0x", "")]
@@ -257,5 +228,78 @@ export class MerchantWallet {
       throw new Error(`Error: ${error.message}`);
     }
     return result.balance;
+  }
+
+  async checkThreshold(threshold: number) {
+    if (threshold < 1) {
+      throw new Error("Invalid threshold");
+    }
+  }
+
+  async changeThreshold(threshold: number) {
+    this.checkThreshold(threshold);
+    const owners = await this.getOwners();
+    if (threshold > owners.length) {
+      throw new Error("Threshold is greater than number of owners");
+    }
+
+    const contract = new this.client.Contract(SafeABI, await this.address());
+    const data = await contract.methods.changeThreshold(threshold).encodeABI();
+
+    const tx = await this.buildTransaction({
+      to: this._address,
+      data,
+    });
+    return tx;
+  }
+
+  async addOwner(owner: string, threshold: number) {
+    this.checkThreshold(threshold);
+    const owners = await this.getOwners();
+    if (threshold > owners.length + 1) {
+      throw new Error("Threshold is greater than number of owners");
+    }
+
+    const contract = new this.client.Contract(SafeABI, await this.address());
+    const data = await contract.methods
+      .addOwnerWithThreshold(owner, threshold)
+      .encodeABI();
+
+    const tx = await this.buildTransaction({
+      to: this._address,
+      data,
+    });
+    return tx;
+  }
+
+  async getPrevOwner(owner: string, owners: string[]) {
+    for (let i = 0; i < owners.length; i++) {
+      if (i === 0 && owners[i] === owner) {
+        return AddressOne;
+      }
+      if (owners[i] === owner) {
+        return owners[i - 1];
+      }
+    }
+  }
+
+  async removeOwner(owner: string, threshold: number) {
+    this.checkThreshold(threshold);
+    const owners = await this.getOwners();
+    if (threshold > owners.length - 1) {
+      throw new Error("Threshold is greater than number of owners");
+    }
+
+    const prevOwner = await this.getPrevOwner(owner, owners);
+    const contract = new this.client.Contract(SafeABI, await this.address());
+    const data = await contract.methods
+      .removeOwner(prevOwner, owner, threshold)
+      .encodeABI();
+
+    const tx = await this.buildTransaction({
+      to: this._address,
+      data,
+    });
+    return tx;
   }
 }
