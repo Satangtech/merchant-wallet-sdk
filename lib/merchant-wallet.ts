@@ -222,7 +222,7 @@ export class MerchantWallet {
   async getBalance(): Promise<number> {
     const { result, error } = await this.client.rpcClient.rpc(
       "getaccountinfo",
-      [this._address.replace("0x", "")]
+      [(await this.address()).replace("0x", "")]
     );
     if (error) {
       throw new Error(`Error: ${error.message}`);
@@ -230,7 +230,7 @@ export class MerchantWallet {
     return result.balance;
   }
 
-  async checkThreshold(threshold: number) {
+  checkThreshold(threshold: number) {
     if (threshold < 1) {
       throw new Error("Invalid threshold");
     }
@@ -272,7 +272,7 @@ export class MerchantWallet {
     return tx;
   }
 
-  async getPrevOwner(owner: string, owners: string[]) {
+  getPrevOwner(owner: string, owners: string[]) {
     for (let i = 0; i < owners.length; i++) {
       if (i === 0 && owners[i] === owner) {
         return AddressOne;
@@ -290,7 +290,7 @@ export class MerchantWallet {
       throw new Error("Threshold is greater than number of owners");
     }
 
-    const prevOwner = await this.getPrevOwner(owner, owners);
+    const prevOwner = this.getPrevOwner(owner, owners);
     const contract = new this.client.Contract(SafeABI, await this.address());
     const data = await contract.methods
       .removeOwner(prevOwner, owner, threshold)
