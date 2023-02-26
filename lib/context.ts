@@ -21,7 +21,10 @@ export class Context extends ContextFiroSDK {
   }
 
   getProxy(): string {
-    return this.proxy;
+    if (this.proxy === "") {
+      return this.proxy;
+    }
+    return `0x${this.proxy.replace("0x", "")}`;
   }
 
   withSingleton(address: string): Context {
@@ -30,6 +33,9 @@ export class Context extends ContextFiroSDK {
   }
 
   getSingleton(): string {
-    return this.singleton;
+    if (this.singleton === "") {
+      return this.singleton;
+    }
+    return `0x${this.singleton.replace("0x", "")}`;
   }
 }

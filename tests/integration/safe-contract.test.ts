@@ -7,14 +7,16 @@ import {
   RPCClient,
   Transaction,
 } from "firovm-sdk";
-import { Testnet } from "../../lib";
-import { abiERC20, SafeABI, SafeProxyFactoryABI } from "./data/abi";
-import { testAddresses, testAddressMiner, testPrivkeys } from "./data/accounts";
 import {
-  byteCodeContractERC20,
+  SafeABI,
   SafeByteCode,
+  ProxyABI,
   SafeProxyFactoryByteCode,
-} from "./data/bytecode";
+  Testnet,
+} from "../../lib";
+import { abiERC20 } from "./data/abi";
+import { testAddresses, testAddressMiner, testPrivkeys } from "./data/accounts";
+import { byteCodeContractERC20 } from "./data/bytecode";
 import {
   AddressOne,
   AddressZero,
@@ -22,7 +24,7 @@ import {
   buildSignatureBytes,
   getRandomIntAsString,
   safeApproveHash,
-} from "./utils";
+} from "../../lib/utils";
 
 let SingletonAddress: string;
 let ProxyAddress: string;
@@ -116,7 +118,7 @@ class SafeContractTest {
   }
 
   async deployContractProxy() {
-    const contractProxy = new this.client.Contract(SafeProxyFactoryABI);
+    const contractProxy = new this.client.Contract(ProxyABI);
     const txidProxy = await contractProxy
       .deploy(SafeProxyFactoryByteCode)
       .send({ from: this.account.acc1 });
@@ -135,10 +137,7 @@ class SafeContractTest {
     await this.deployContractSingleton();
     await this.deployContractProxy();
 
-    const contractProxy = new this.client.Contract(
-      SafeProxyFactoryABI,
-      ProxyAddress
-    );
+    const contractProxy = new this.client.Contract(ProxyABI, ProxyAddress);
     const txCreate = await contractProxy.methods
       .createProxyWithNonce(
         `0x${SingletonAddress}`,

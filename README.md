@@ -58,13 +58,13 @@ const setupTxId = await merchantWallet.setup(owner, threshold, TxOptions?);
 #### Get Threshold of the merchant wallet
 
 ```typescript
-const threshold = await merchantWallet.getThreshold(); // cached
+const threshold = await merchantWallet.getThreshold();
 ```
 
 #### Get Owner of the merchant wallet
 
 ```typescript
-const owner = await merchantWallet.getOwner(); // cached
+const owner = await merchantWallet.getOwners();
 ```
 
 #### Deposit to the merchant wallet
@@ -76,7 +76,10 @@ const txHash = await merchantWallet.deposit(amount);
 // Send token to merchant wallet
 const erc20 = new client.Contract(abiERC20, Erc20ContractAddress);
 const txid = await contract.methods
-  .transfer(merchantWallet.address, (BigInt(10) * BigInt(1e18)).toString())
+  .transfer(
+    await merchantWallet.address(),
+    (BigInt(10) * BigInt(1e18)).toString()
+  )
   .send({
     from: account,
   });

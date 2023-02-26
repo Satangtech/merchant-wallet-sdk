@@ -1,53 +1,162 @@
-import { MnemonicAccount, Context, Network } from "firovm-sdk";
+import { Client, MnemonicAccount, PrivkeyAccount } from "firovm-sdk";
+import { Context } from "./context";
+import { ProxyABI, SafeABI } from "./data/abi";
+import { AddressZero, getRandomIntAsString } from "./utils";
+
+export interface TxOptions {
+  gasPrice?: number;
+  gas?: number;
+}
 
 export class MerchantWallet {
-  mnemonic: MnemonicAccount;
-  context: Context;
+  private threshold: number;
+  private owners: string[];
+  private createWalletTxId: string;
 
   constructor(
-    private rpcUrl: string,
-    private network?: Network,
-    private mnemonicWords?: string,
-    private accountIndex: number = 0
+    private context: Context,
+    private client: Client,
+    private account: MnemonicAccount | PrivkeyAccount,
+    private _address: string = ""
   ) {
-    this.context = new Context().withNetwork(
-      network ? network : Network.Mainnet
+    this.threshold = 0;
+    this.owners = [];
+    this.createWalletTxId = "";
+    this._address = _address;
+  }
+
+  async deploy(options: TxOptions = {}): Promise<string> {
+    if (this.context.getSingleton() === "") {
+      throw new Error("Singleton address is not set");
+    }
+    if (this.context.getProxy() === "") {
+      throw new Error("Proxy address is not set");
+    }
+
+    const sendOptions: {
+      from: MnemonicAccount | PrivkeyAccount;
+      gasPrice?: number;
+      gas?: number;
+    } = {
+      from: this.account,
+    };
+    if (options.gasPrice) {
+      sendOptions.gasPrice = options.gasPrice;
+    }
+    if (options.gas) {
+      sendOptions.gas = options.gas;
+    }
+
+    const contractProxy = new this.client.Contract(
+      ProxyABI,
+      this.context.getProxy()
     );
-    this.mnemonic = mnemonicWords
-      ? new MnemonicAccount(this.context, mnemonicWords, accountIndex)
-      : new MnemonicAccount(this.context);
+    this.createWalletTxId = await contractProxy.methods
+      .createProxyWithNonce(
+        this.context.getSingleton(),
+        "0x",
+        getRandomIntAsString()
+      )
+      .send(sendOptions);
+
+    return this.createWalletTxId;
   }
 
-  async rpc(method: string, params: any = []) {
-    const init = {
-      method: "post",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        id: Date.now().toString(),
-        jsonrpc: "2.0",
-        method,
-        params: params ? params : [],
-      }),
+  async address(): Promise<string> {
+    if (this._address !== "") {
+      return this._address;
+    }
+    if (this.createWalletTxId === "") {
+      throw new Error("Wallet not deployed");
+    }
+
+    const { result, error } = await this.client.rpcClient.getTransactionReceipt(
+      this.createWalletTxId
+    );
+    if (error) {
+      throw new Error(`Error: ${error.message}`);
+    }
+    if (result.length === 0) {
+      throw new Error("Transaction may not have been mined yet.");
+    }
+    this._address = `0x${
+      result[0].log[0].data.split("000000000000000000000000")[1]
+    }`;
+    return this._address;
+  }
+
+  async setup(
+    owners: string[],
+    threshold: number,
+    options: TxOptions = {}
+  ): Promise<string> {
+    if (this._address === "") {
+      throw new Error("Address not set");
+    }
+    if (owners.length < threshold || owners.length < 1) {
+      throw new Error("Invalid owners or threshold");
+    }
+
+    const sendOptions: {
+      from: MnemonicAccount | PrivkeyAccount;
+      gasPrice?: number;
+      gas?: number;
+    } = {
+      from: this.account,
     };
-    const resTx = await fetch(this.rpcUrl, init);
-    const resJsonTx = await resTx.json();
-    return resJsonTx;
+    if (options.gasPrice) {
+      sendOptions.gasPrice = options.gasPrice;
+    }
+    if (options.gas) {
+      sendOptions.gas = options.gas;
+    }
+
+    const contract = new this.client.Contract(SafeABI, this._address);
+    const txId = await contract.methods
+      .setup(
+        owners,
+        threshold,
+        AddressZero,
+        "0x",
+        AddressZero,
+        AddressZero,
+        0,
+        AddressZero
+      )
+      .send(sendOptions);
+
+    this.threshold = threshold;
+    this.owners = owners;
+
+    return txId;
   }
 
-  getInfo() {
-    return {
-      hex_address: this.mnemonic.hex_address(),
-      address: this.mnemonic.address().toString(),
-    };
+  async getOwners(): Promise<string[]> {
+    if (this._address === "") {
+      throw new Error("Address not set");
+    }
+
+    const contract = new this.client.Contract(SafeABI, this._address);
+    this.owners = (await contract.methods.getOwners().call())["0"];
+    return this.owners;
   }
 
-  async getUTXOs(amount = 1) {
-    const { result } = await this.rpc("qtum_getUTXOs", [
-      this.mnemonic.hex_address(),
-      amount,
-    ]);
-    return result;
+  async getThreshold(): Promise<number> {
+    if (this._address === "") {
+      throw new Error("Address not set");
+    }
+
+    const contract = new this.client.Contract(SafeABI, this._address);
+    this.threshold = (await contract.methods.getThreshold().call())["0"];
+    return this.threshold;
+  }
+
+  async getNonce(): Promise<number> {
+    if (this._address === "") {
+      throw new Error("Address not set");
+    }
+
+    const contract = new this.client.Contract(SafeABI, this._address);
+    return (await contract.methods.nonce().call())["0"];
   }
 }
