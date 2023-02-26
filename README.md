@@ -102,7 +102,7 @@ const balance = await erc20.methods.balanceOf(merchantWallet.address).call();
 const value = 10000; // satoshi
 const to = "0x000000000000000000000000000000000000add4";
 
-const merchantTx = merchantWallet.buildTransaction(to, value);
+const merchantTx = await merchantWallet.buildTransaction({ to, value });
 const merchantTxHash = await merchantWallet.getTransactionHash(merchantTx);
 
 // Send merchantTxHash to another owner to approve
@@ -114,7 +114,10 @@ const txIdApprove = await merchantWallet.approveTransaction(merchantTxHash);
 #### Execute Transaction of the merchant wallet
 
 ```typescript
-const merchantTx = merchantWallet.buildTransaction(to, value);
+const merchantTx = await merchantWallet.buildTransaction({
+  to: "0x000000000000000000000000000000000000add5",
+  value: 10000, // satoshi
+});
 
 // Can execute transaction when approved by threshold number of owners
 // In this case, threshold is 2, so need to approve by 2 owners
@@ -137,11 +140,10 @@ const value = (BigInt(10) * BigInt(1e18)).toString();
 const to = "0x000000000000000000000000000000000000add4";
 const data = erc20.methods.transfer(to, value).encodeABI();
 
-const merchantTx = merchantWallet.buildTransaction(
-  Erc20ContractAddress,
-  0,
-  data
-);
+const merchantTx = await merchantWallet.buildTransaction({
+  to: Erc20ContractAddress,
+  data,
+});
 
 // getTransactionHash and approveTransaction is the same
 

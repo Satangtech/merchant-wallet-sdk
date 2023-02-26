@@ -23,7 +23,7 @@ import {
   buildTransaction,
   buildSignatureBytes,
   getRandomIntAsString,
-  safeApproveHash,
+  approveHash,
 } from "../../lib/utils";
 
 let SingletonAddress: string;
@@ -317,8 +317,8 @@ class SafeContractTest {
     });
 
     const signatures = [
-      safeApproveHash(this.account.acc1.hex_address()),
-      safeApproveHash(this.account.acc2.hex_address()),
+      approveHash(this.account.acc1.hex_address()),
+      approveHash(this.account.acc2.hex_address()),
     ];
     const signatureBytes = buildSignatureBytes(signatures);
     const contract = new this.client.Contract(SafeABI, SafeAddress);
@@ -448,8 +448,8 @@ class SafeContractTest {
       nonce: await this.safeNonce(),
     });
     const signatures = [
-      safeApproveHash(this.account.acc1.hex_address()),
-      safeApproveHash(this.account.acc2.hex_address()),
+      approveHash(this.account.acc1.hex_address()),
+      approveHash(this.account.acc2.hex_address()),
     ];
     const signatureBytes = buildSignatureBytes(signatures);
 
@@ -525,8 +525,8 @@ class SafeContractTest {
       nonce: await this.safeNonce(),
     });
     const signatures = [
-      safeApproveHash(this.account.acc1.hex_address()),
-      safeApproveHash(this.account.acc2.hex_address()),
+      approveHash(this.account.acc1.hex_address()),
+      approveHash(this.account.acc2.hex_address()),
     ];
     const signatureBytes = buildSignatureBytes(signatures);
 
@@ -595,9 +595,9 @@ class SafeContractTest {
       nonce: await this.safeNonce(),
     });
     const signatures = [
-      safeApproveHash(this.account.acc1.hex_address()),
-      safeApproveHash(this.account.acc2.hex_address()),
-      safeApproveHash(this.account.acc3.hex_address()),
+      approveHash(this.account.acc1.hex_address()),
+      approveHash(this.account.acc2.hex_address()),
+      approveHash(this.account.acc3.hex_address()),
     ];
     const signatureBytes = buildSignatureBytes(signatures);
 
@@ -702,9 +702,9 @@ class SafeContractTest {
       nonce: await this.safeNonce(),
     });
     const signatures = [
-      safeApproveHash(this.account.acc1.hex_address()),
-      safeApproveHash(this.account.acc2.hex_address()),
-      safeApproveHash(this.account.acc4.hex_address()),
+      approveHash(this.account.acc1.hex_address()),
+      approveHash(this.account.acc2.hex_address()),
+      approveHash(this.account.acc4.hex_address()),
     ];
     const signatureBytes = buildSignatureBytes(signatures);
 

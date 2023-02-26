@@ -28,14 +28,14 @@ export const fromHexAddress = (
 export const AddressZero = "0x0000000000000000000000000000000000000000";
 export const AddressOne = "0x0000000000000000000000000000000000000001";
 
-export interface SafeSignature {
+export interface Signature {
   signer: string;
   data: string;
   // a flag to indicate if the signature is a contract signature and the data has to be appended to the dynamic part of signature bytes
   dynamic?: true;
 }
 
-export const buildSignatureBytes = (signatures: SafeSignature[]): string => {
+export const buildSignatureBytes = (signatures: Signature[]): string => {
   const SIGNATURE_LENGTH_BYTES = 65;
   signatures.sort((left, right) =>
     left.signer.toLowerCase().localeCompare(right.signer.toLowerCase())
@@ -79,7 +79,7 @@ export const buildSignatureBytes = (signatures: SafeSignature[]): string => {
   return signatureBytes + dynamicBytes;
 };
 
-export const buildTransaction = (template: {
+export interface MerchantTransaction {
   to: string;
   value?: number | string;
   data?: string;
@@ -90,7 +90,9 @@ export const buildTransaction = (template: {
   gasToken?: string;
   refundReceiver?: string;
   nonce: number;
-}) => {
+}
+
+export const buildTransaction = (template: MerchantTransaction) => {
   return {
     to: template.to,
     value: template.value || 0,
@@ -105,7 +107,7 @@ export const buildTransaction = (template: {
   };
 };
 
-export const safeApproveHash = (signerAddress: string) => {
+export const approveHash = (signerAddress: string) => {
   return {
     signer: signerAddress,
     data:

@@ -1,7 +1,14 @@
 import { Client, MnemonicAccount, PrivkeyAccount } from "firovm-sdk";
 import { Context } from "./context";
 import { ProxyABI, SafeABI } from "./data/abi";
-import { AddressZero, getRandomIntAsString } from "./utils";
+import {
+  AddressZero,
+  buildSignatureBytes,
+  buildTransaction,
+  getRandomIntAsString,
+  MerchantTransaction,
+  approveHash,
+} from "./utils";
 
 export interface TxOptions {
   gasPrice?: number;
@@ -25,14 +32,7 @@ export class MerchantWallet {
     this._address = _address;
   }
 
-  async deploy(options: TxOptions = {}): Promise<string> {
-    if (this.context.getSingleton() === "") {
-      throw new Error("Singleton address is not set");
-    }
-    if (this.context.getProxy() === "") {
-      throw new Error("Proxy address is not set");
-    }
-
+  getOptions(options: TxOptions = {}) {
     const sendOptions: {
       from: MnemonicAccount | PrivkeyAccount;
       gasPrice?: number;
@@ -46,7 +46,18 @@ export class MerchantWallet {
     if (options.gas) {
       sendOptions.gas = options.gas;
     }
+    return sendOptions;
+  }
 
+  async deploy(options: TxOptions = {}): Promise<string> {
+    if (this.context.getSingleton() === "") {
+      throw new Error("Singleton address is not set");
+    }
+    if (this.context.getProxy() === "") {
+      throw new Error("Proxy address is not set");
+    }
+
+    const sendOptions = this.getOptions(options);
     const contractProxy = new this.client.Contract(
       ProxyABI,
       this.context.getProxy()
@@ -97,20 +108,7 @@ export class MerchantWallet {
       throw new Error("Invalid owners or threshold");
     }
 
-    const sendOptions: {
-      from: MnemonicAccount | PrivkeyAccount;
-      gasPrice?: number;
-      gas?: number;
-    } = {
-      from: this.account,
-    };
-    if (options.gasPrice) {
-      sendOptions.gasPrice = options.gasPrice;
-    }
-    if (options.gas) {
-      sendOptions.gas = options.gas;
-    }
-
+    const sendOptions = this.getOptions(options);
     const contract = new this.client.Contract(SafeABI, this._address);
     const txId = await contract.methods
       .setup(
@@ -158,5 +156,106 @@ export class MerchantWallet {
 
     const contract = new this.client.Contract(SafeABI, this._address);
     return (await contract.methods.nonce().call())["0"];
+  }
+
+  async buildTransaction(template: {
+    to: string;
+    value?: number;
+    data?: string;
+  }) {
+    return buildTransaction({
+      to: template.to,
+      value: template.value || 0,
+      data: template.data || "0x",
+      nonce: await this.getNonce(),
+    });
+  }
+
+  async getTransactionHash(tx: MerchantTransaction): Promise<string> {
+    if (this._address === "") {
+      throw new Error("Address not set");
+    }
+
+    const contract = new this.client.Contract(SafeABI, this._address);
+    return (
+      await contract.methods
+        .getTransactionHash(
+          tx.to,
+          tx.value,
+          tx.data,
+          tx.operation,
+          tx.safeTxGas,
+          tx.baseGas,
+          tx.gasPrice,
+          tx.gasToken,
+          tx.refundReceiver,
+          tx.nonce
+        )
+        .call()
+    )["0"];
+  }
+
+  async approveTransaction(
+    txHash: string,
+    options: TxOptions = {}
+  ): Promise<string> {
+    if (this._address === "") {
+      throw new Error("Address not set");
+    }
+
+    const sendOptions = this.getOptions(options);
+    const contract = new this.client.Contract(SafeABI, this._address);
+    return await contract.methods.approveHash(txHash).send(sendOptions);
+  }
+
+  async executeTransaction(
+    tx: MerchantTransaction,
+    addressApprover: string[],
+    options: TxOptions = {}
+  ) {
+    if (this._address === "") {
+      throw new Error("Address not set");
+    }
+    if (addressApprover.length < this.threshold) {
+      throw new Error("Not enough approvers");
+    }
+
+    const signatures = [];
+    for (let address of addressApprover) {
+      signatures.push(approveHash(address));
+    }
+    const signatureBytes = buildSignatureBytes(signatures);
+
+    const sendOptions = this.getOptions(options);
+    const contract = new this.client.Contract(SafeABI, this._address);
+    return await contract.methods
+      .execTransaction(
+        tx.to,
+        tx.value,
+        tx.data,
+        tx.operation,
+        tx.safeTxGas,
+        tx.baseGas,
+        tx.gasPrice,
+        tx.gasToken,
+        tx.refundReceiver,
+        signatureBytes
+      )
+      .send(sendOptions);
+  }
+
+  async getBalance(): Promise<number> {
+    if (this._address === "") {
+      throw new Error("Address not set");
+    }
+
+    const { result, error } = await this.client.rpcClient.rpc(
+      "getaccountinfo",
+      [this._address.replace("0x", "")]
+    );
+    if (error) {
+      throw new Error(`Error: ${error.message}`);
+    }
+    return result.balance;
   }
 }
