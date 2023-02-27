@@ -9,12 +9,8 @@ import {
   MerchantTransaction,
   approveHash,
   AddressOne,
+  TxOptions,
 } from "./utils";
-
-export interface TxOptions {
-  gasPrice?: number;
-  gas?: number;
-}
 
 export class MerchantWallet {
   private threshold: number;
@@ -33,24 +29,7 @@ export class MerchantWallet {
     this._address = _address;
   }
 
-  getOptions(options: TxOptions = {}) {
-    const sendOptions: {
-      from: MnemonicAccount | PrivkeyAccount;
-      gasPrice?: number;
-      gas?: number;
-    } = {
-      from: this.account,
-    };
-    if (options.gasPrice) {
-      sendOptions.gasPrice = options.gasPrice;
-    }
-    if (options.gas) {
-      sendOptions.gas = options.gas;
-    }
-    return sendOptions;
-  }
-
-  async deploy(options: TxOptions = {}): Promise<string> {
+  async deploy(options: TxOptions): Promise<string> {
     if (this.context.getSingleton() === "") {
       throw new Error("Singleton address is not set");
     }
@@ -58,7 +37,6 @@ export class MerchantWallet {
       throw new Error("Proxy address is not set");
     }
 
-    const sendOptions = this.getOptions(options);
     const contractProxy = new this.client.Contract(
       ProxyABI,
       this.context.getProxy()
@@ -69,7 +47,10 @@ export class MerchantWallet {
         "0x",
         getRandomIntAsString()
       )
-      .send(sendOptions);
+      .send({
+        from: this.account,
+        ...options,
+      });
 
     return this.createWalletTxId;
   }
@@ -100,13 +81,12 @@ export class MerchantWallet {
   async setup(
     owners: string[],
     threshold: number,
-    options: TxOptions = {}
+    options: TxOptions
   ): Promise<string> {
     if (owners.length < threshold || owners.length < 1) {
       throw new Error("Invalid owners or threshold");
     }
 
-    const sendOptions = this.getOptions(options);
     const contract = new this.client.Contract(SafeABI, await this.address());
     const txId = await contract.methods
       .setup(
@@ -119,7 +99,10 @@ export class MerchantWallet {
         0,
         AddressZero
       )
-      .send(sendOptions);
+      .send({
+        from: this.account,
+        ...options,
+      });
 
     this.threshold = threshold;
     this.owners = owners;
@@ -144,7 +127,7 @@ export class MerchantWallet {
     return (await contract.methods.nonce().call())["0"];
   }
 
-  async deposit(amount: number, options: TxOptions = {}) {
+  async deposit(amount: number, options: TxOptions) {
     // TODO: deposit to the wallet
   }
 
@@ -183,17 +166,19 @@ export class MerchantWallet {
 
   async approveTransaction(
     txHash: string,
-    options: TxOptions = {}
+    options: TxOptions
   ): Promise<string> {
-    const sendOptions = this.getOptions(options);
     const contract = new this.client.Contract(SafeABI, await this.address());
-    return await contract.methods.approveHash(txHash).send(sendOptions);
+    return await contract.methods.approveHash(txHash).send({
+      from: this.account,
+      ...options,
+    });
   }
 
   async executeTransaction(
     tx: MerchantTransaction,
     addressApprover: string[],
-    options: TxOptions = {}
+    options: TxOptions
   ) {
     if (addressApprover.length < this.threshold) {
       throw new Error("Not enough approvers");
@@ -205,7 +190,6 @@ export class MerchantWallet {
     }
     const signatureBytes = buildSignatureBytes(signatures);
 
-    const sendOptions = this.getOptions(options);
     const contract = new this.client.Contract(SafeABI, await this.address());
     return await contract.methods
       .execTransaction(
@@ -220,7 +204,10 @@ export class MerchantWallet {
         tx.refundReceiver,
         signatureBytes
       )
-      .send(sendOptions);
+      .send({
+        from: this.account,
+        ...options,
+      });
   }
 
   async getBalance(): Promise<number> {

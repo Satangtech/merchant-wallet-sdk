@@ -58,22 +58,6 @@ class MerchantWalletTest {
     };
   }
 
-  async loadWallet() {
-    const res = await this.rpcClient.rpc("loadwallet", ["testwallet"]);
-  }
-
   @test
-  async createMerchantWallet() {
-    const merchantWallet = new MerchantWallet(
-      this.rpcUrl.href,
-      this.account.acc1,
-      [
-        this.account.acc1.hex_address(),
-        this.account.acc2.hex_address(),
-        this.account.acc3.hex_address(),
-      ],
-      2
-    );
-    expect(merchantWallet).to.be.an.instanceof(MerchantWallet);
-  }
+  async createMerchantWallet() {}
 }

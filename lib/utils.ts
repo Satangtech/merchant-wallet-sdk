@@ -1,5 +1,13 @@
+import { MnemonicAccount, PrivkeyAccount } from "firovm-sdk";
 // @ts-ignore
 import { Address, Networks } from "fvmcore-lib";
+
+export interface TxOptions {
+  gasPrice?: number;
+  gas?: number;
+  value?: number;
+  input?: string;
+}
 
 export const getRandomInt = (
   min = 0,
