@@ -144,6 +144,10 @@ export class MerchantWallet {
     return (await contract.methods.nonce().call())["0"];
   }
 
+  async deposit(amount: number, options: TxOptions = {}) {
+    // TODO: deposit to the wallet
+  }
+
   async buildTransaction(template: {
     to: string;
     value?: number;
