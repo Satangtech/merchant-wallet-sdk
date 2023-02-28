@@ -10,7 +10,7 @@
   },
   "scripts": {
     "test": "npx mocha -r ts-node/register 'tests/unittest/**/*.ts'",
-    "test:integration": "npx mocha --timeout 1000000000 -r ts-node/register 'tests/integration/factory.test.ts'",
+    "test:integration": "npx mocha --timeout 1000000000 -r ts-node/register 'tests/integration/**/*.ts'",
     "test:it:build": "docker compose -f docker-compose.test.yml build it-test",
     "test:it": "tar xfv firovm.tar && docker compose -f docker-compose.test.yml up --build it-test",
     "test:down": "rm -rf .firovm && docker compose -f docker-compose.test.yml down -v && yarn rm:dangling",

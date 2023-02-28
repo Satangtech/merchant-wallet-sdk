@@ -119,7 +119,7 @@ export class MerchantWallet {
   async getThreshold(): Promise<number> {
     const contract = new this.client.Contract(SafeABI, await this.address());
     this.threshold = (await contract.methods.getThreshold().call())["0"];
-    return this.threshold;
+    return Number(this.threshold);
   }
 
   async getNonce(): Promise<number> {
@@ -127,8 +127,15 @@ export class MerchantWallet {
     return (await contract.methods.nonce().call())["0"];
   }
 
-  async deposit(amount: number, options?: TxOptions) {
-    // TODO: deposit to the wallet
+  // TODO: deposit to the wallet (Try to modify the contract)
+  async deposit(amount: number, options?: TxOptions): Promise<string> {
+    const contract = new this.client.Contract(SafeABI, await this.address());
+    const txid = await contract.methods.deposit().send({
+      from: this.account,
+      value: amount, // satoshi
+      ...options,
+    });
+    return txid;
   }
 
   async buildTransaction(template: {

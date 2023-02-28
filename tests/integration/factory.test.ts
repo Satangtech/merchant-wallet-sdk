@@ -100,7 +100,7 @@ class FactoryTest {
     expect(result[0].contractAddress).to.be.a("string");
     expect(result[0].excepted).to.be.equal("None");
     expect(result[0].contractAddress).to.be.equal(
-      (await factory.addressSingleton())?.replace("0x", "")
+      (await factory.addressSingleton()).replace("0x", "")
     );
   }
 
@@ -117,7 +117,7 @@ class FactoryTest {
     expect(result[0].contractAddress).to.be.a("string");
     expect(result[0].excepted).to.be.equal("None");
     expect(result[0].contractAddress).to.be.equal(
-      (await factory.addressProxy())?.replace("0x", "")
+      (await factory.addressProxy()).replace("0x", "")
     );
   }
 }

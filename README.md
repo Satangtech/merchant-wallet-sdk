@@ -97,7 +97,7 @@ const txHash = await merchantWallet.deposit(amount);
 
 // Send token to merchant wallet
 const erc20 = new client.Contract(abiERC20, Erc20ContractAddress);
-const txid = await contract.methods
+const txid = await erc20.methods
   .transfer(
     await merchantWallet.address(),
     (BigInt(10) * BigInt(1e18)).toString()
@@ -115,7 +115,9 @@ const balance = await merchantWallet.getBalance();
 
 // Get balance of erc20
 const erc20 = new client.Contract(abiERC20, Erc20ContractAddress);
-const balance = await erc20.methods.balanceOf(merchantWallet.address).call();
+const balance = await erc20.methods
+  .balanceOf(await merchantWallet.address())
+  .call();
 ```
 
 #### Create Transaction and Approve Transaction

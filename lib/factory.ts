@@ -43,7 +43,7 @@ export class Factory {
     return this.proxyTxId;
   }
 
-  async addressSingleton(): Promise<string | undefined> {
+  async addressSingleton(): Promise<string> {
     if (this.singletonTxId === "") {
       throw new Error("Singleton not deployed");
     }
@@ -67,7 +67,7 @@ export class Factory {
     return this.singletonAddress;
   }
 
-  async addressProxy(): Promise<string | undefined> {
+  async addressProxy(): Promise<string> {
     if (this.proxyTxId === "") {
       throw new Error("Proxy not deployed");
     }
