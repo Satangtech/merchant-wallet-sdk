@@ -30,6 +30,7 @@ let SingletonAddress: string;
 let ProxyAddress: string;
 let SafeAddress: string;
 let Erc20Address: string;
+let depositAccount: PrivkeyAccount;
 
 @suite
 class SafeContractTest {
@@ -61,7 +62,8 @@ class SafeContractTest {
       acc3: PrivkeyAccount;
       acc4: PrivkeyAccount;
       acc5: PrivkeyAccount;
-    }
+    },
+    private depositAccount: PrivkeyAccount
   ) {
     this.rpcUrl = new URL("http://test:test@firovm:1234");
     this.rpcClient = new RPCClient(this.rpcUrl.href);
@@ -77,6 +79,10 @@ class SafeContractTest {
       acc4: new PrivkeyAccount(this.context, this.privkey.testPrivkey4),
       acc5: new PrivkeyAccount(this.context, this.privkey.testPrivkey5),
     };
+  }
+
+  getNewAccount(): PrivkeyAccount {
+    return new PrivkeyAccount(new Context().withNetwork(Testnet));
   }
 
   async generateToAddress() {
@@ -200,6 +206,7 @@ class SafeContractTest {
     );
     await this.initSafeContract();
     await this.deployContractERC20();
+    depositAccount = this.getNewAccount();
   }
 
   @test
@@ -311,7 +318,7 @@ class SafeContractTest {
   @test
   async execTransaction() {
     const safeTx = buildTransaction({
-      to: this.account.acc5.hex_address(),
+      to: depositAccount.hex_address(),
       value: 1000,
       nonce: await this.safeNonce(),
     });
@@ -405,7 +412,7 @@ class SafeContractTest {
     expect(result.balance).to.be.equal(9000);
 
     const balance = await this.client.getBalance(
-      this.account.acc5.address().toString()
+      depositAccount.address().toString()
     );
     expect(balance).to.be.equal(1000);
   }
@@ -437,7 +444,7 @@ class SafeContractTest {
     const contractERC20 = new this.client.Contract(abiERC20, Erc20Address);
     const data = contractERC20.methods
       .transfer(
-        this.account.acc5.hex_address(),
+        depositAccount.hex_address(),
         (BigInt(1) * BigInt(1e18)).toString()
       )
       .encodeABI();
@@ -508,7 +515,7 @@ class SafeContractTest {
     expect(
       (
         await contractERC20.methods
-          .balanceOf(this.account.acc5.hex_address())
+          .balanceOf(depositAccount.hex_address())
           .call()
       )["0"]
     ).to.be.equal((BigInt(1) * BigInt(1e18)).toString());
