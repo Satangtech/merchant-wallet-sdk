@@ -1,4 +1,4 @@
-import { Client, Contract, MnemonicAccount, PrivkeyAccount } from "firovm-sdk";
+import { Client, MnemonicAccount, PrivkeyAccount } from "firovm-sdk";
 import { ProxyABI, SafeABI } from "./data/abi";
 import { SafeByteCode, SafeProxyFactoryByteCode } from "./data/bytecode";
 import { TxOptions } from "./utils";

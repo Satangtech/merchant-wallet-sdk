@@ -8,6 +8,25 @@ npm install merchant-wallet-sdk
 
 ### Example
 
+#### Deploy Singleton and Proxy
+
+You can make it into a separate script to run only once and then use the addresses of the Singleton and Proxy for further use.
+
+```typescript
+import { Factory, TxOptions } from "merchant-wallet-sdk";
+
+const rpcUrl = "https://rpc.firovm.com";
+const client = new Client(rpcUrl);
+const account = new PrivkeyAccount(context, "privkey"); // or MnemonicAccount
+const factory = new Factory(client, account);
+
+const singletonTxId = await factory.deploySingleton(TxOptions?);
+const proxyTxId = await factory.deployProxy(TxOptions?);
+
+await factory.addressSingleton(); // 0x0000000000000000000000000000000Singleton
+await factory.addressProxy(); // 0x0000000000000000000000000000ProxyAddress
+```
+
 #### Create a merchant wallet
 
 ```typescript
@@ -17,13 +36,16 @@ import { PrivkeyAccount, Network, Client } from "firovm-sdk";
 const rpcUrl = "https://rpc.firovm.com";
 const context = new Context()
   .withNetwork(Network.Testnet)
-  .withProxyAddress("0x0000000000000000000000000000ProxyAddress");
+  .withProxy("0x0000000000000000000000000000ProxyAddress");
+  .withSingleton("0x0000000000000000000000000000000Singleton");
 const client = new Client(rpcUrl);
 const account = new PrivkeyAccount(context, "privkey"); // or MnemonicAccount
 
 interface TxOptions {
-  GasPrice?: number;
-  GasLimit?: number;
+  gasPrice?: number;
+  gas?: number;
+  value?: number;
+  input?: string;
 }
 
 const merchantWallet = new MerchantWallet(context, client, account);
