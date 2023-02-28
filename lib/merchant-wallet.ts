@@ -29,7 +29,7 @@ export class MerchantWallet {
     this._address = _address;
   }
 
-  async deploy(options: TxOptions): Promise<string> {
+  async deploy(options?: TxOptions): Promise<string> {
     if (this.context.getSingleton() === "") {
       throw new Error("Singleton address is not set");
     }
@@ -81,7 +81,7 @@ export class MerchantWallet {
   async setup(
     owners: string[],
     threshold: number,
-    options: TxOptions
+    options?: TxOptions
   ): Promise<string> {
     if (owners.length < threshold || owners.length < 1) {
       throw new Error("Invalid owners or threshold");
@@ -127,7 +127,7 @@ export class MerchantWallet {
     return (await contract.methods.nonce().call())["0"];
   }
 
-  async deposit(amount: number, options: TxOptions) {
+  async deposit(amount: number, options?: TxOptions) {
     // TODO: deposit to the wallet
   }
 
@@ -166,7 +166,7 @@ export class MerchantWallet {
 
   async approveTransaction(
     txHash: string,
-    options: TxOptions
+    options?: TxOptions
   ): Promise<string> {
     const contract = new this.client.Contract(SafeABI, await this.address());
     return await contract.methods.approveHash(txHash).send({
@@ -178,7 +178,7 @@ export class MerchantWallet {
   async executeTransaction(
     tx: MerchantTransaction,
     addressApprover: string[],
-    options: TxOptions
+    options?: TxOptions
   ) {
     if (addressApprover.length < this.threshold) {
       throw new Error("Not enough approvers");

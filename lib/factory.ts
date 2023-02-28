@@ -17,7 +17,7 @@ export class Factory {
     this.proxyTxId = "";
   }
 
-  async deploySingleton(options: TxOptions): Promise<string> {
+  async deploySingleton(options?: TxOptions): Promise<string> {
     if (this.singletonTxId !== "") {
       return this.singletonTxId;
     }
@@ -30,7 +30,7 @@ export class Factory {
     return this.singletonTxId;
   }
 
-  async deployProxy(options: TxOptions): Promise<string> {
+  async deployProxy(options?: TxOptions): Promise<string> {
     if (this.proxyTxId !== "") {
       return this.proxyTxId;
     }
@@ -57,6 +57,12 @@ export class Factory {
     if (error) {
       throw new Error(error.message);
     }
+    if (result.length === 0) {
+      throw new Error("Transaction may not have been mined yet");
+    }
+    if (result[0].excepted !== "None") {
+      throw new Error(`Transaction failed: ${result[0].exceptedMessage}`);
+    }
     this.singletonAddress = `0x${result[0].contractAddress}`;
     return this.singletonAddress;
   }
@@ -74,6 +80,12 @@ export class Factory {
     );
     if (error) {
       throw new Error(error.message);
+    }
+    if (result.length === 0) {
+      throw new Error("Transaction may not have been mined yet");
+    }
+    if (result[0].excepted !== "None") {
+      throw new Error(`Transaction failed: ${result[0].exceptedMessage}`);
     }
     this.proxyAddress = `0x${result[0].contractAddress}`;
     return this.proxyAddress;
