@@ -1,7 +1,7 @@
 {
   "name": "merchant-wallet-sdk",
-  "version": "1.0.0",
-  "description": "",
+  "version": "0.0.1",
+  "description": "Merchant Wallet sdk for interact with firovm",
   "main": "dist/lib/index.js",
   "types": "dist/lib/index.d.ts",
   "directories": {
@@ -9,6 +9,9 @@
     "test": "tests"
   },
   "scripts": {
+    "build": "rm -rf ./dist && tsc",
+    "prepare": "yarn build",
+    "prepublishOnly": "yarn test",
     "test": "npx mocha -r ts-node/register 'tests/unittest/**/*.ts'",
     "test:integration": "npx mocha --timeout 1000000000 -r ts-node/register 'tests/integration/**/*.ts'",
     "test:it:build": "docker compose -f docker-compose.test.yml build it-test",
