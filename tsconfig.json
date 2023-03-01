@@ -1,7 +1,10 @@
 {
   "compilerOptions": {
     "allowJs": true,
+    "declaration": true,
+    "declarationMap": true,
     "experimentalDecorators": true,
+    "sourceMap": true,
     "target": "es6",
     "module": "commonjs",
     "esModuleInterop": true,
