@@ -1,5 +1,5 @@
 #!/bin/bash
-curl -L -o firovm.tar "https://drive.google.com/uc?export=download&id=1RDzTIico7RsI7y5eQT52VInoCuLvjjq0"
+curl -L -o firovm.tar "https://drive.google.com/uc?export=download&id=1vyxmcF0Qf-65PioPaF6VlG_HNSdCDiO4"
 
 # Set the expected checksum value
 expected_sha256sum="bc0112ddcf2573fb770b0784c133ce513ae2725a5f4ba2a49296af7bb26606ce"
