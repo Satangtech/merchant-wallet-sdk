@@ -1,0 +1,18 @@
+services:
+  firovm:
+    image: satangtech/firovm-poa:2b225f0791ebb560d299780364965254cace247f
+    tty: true
+    stdin_open: true
+    command: -connect=0
+    volumes:
+      - ./.firovm:/firovm
+    ports:
+      - 1234:1234
+      - 11000:11000
+
+  it-test:
+    build: .
+    tty: true
+    stdin_open: true
+    depends_on:
+      - firovm

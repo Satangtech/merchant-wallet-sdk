@@ -1,0 +1,48 @@
+{
+  "name": "merchant-wallet-sdk",
+  "version": "0.0.3",
+  "description": "Merchant Wallet sdk for interact with firovm",
+  "main": "dist/lib/index.js",
+  "types": "dist/lib/index.d.ts",
+  "directories": {
+    "lib": "lib",
+    "test": "tests"
+  },
+  "scripts": {
+    "build": "rm -rf ./dist && tsc",
+    "prepare": "yarn build",
+    "prepublishOnly": "yarn test",
+    "test": "npx mocha -r ts-node/register 'tests/unittest/**/*.ts'",
+    "test:integration": "npx mocha --timeout 1000000000 -r ts-node/register 'tests/integration/**/*.ts'",
+    "test:setup": "[ ! -d .firovm ] && bash checksum_verification.sh && tar xfv firovm.tar || echo '.firovm directory already exists'",
+    "test:it": "yarn test:setup && docker compose -f docker-compose.test.yml up --build it-test",
+    "test:down": "rm -rf .firovm && docker compose -f docker-compose.test.yml down -v && yarn rm:dangling",
+    "rm:dangling": "if [ -n \"$(docker images -f \"dangling=true\" -q)\" ]; then docker rmi $(docker images -f \"dangling=true\" -q); else echo \"No images found\"; fi"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Satangtech/merchant-wallet-sdk.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Satangtech/merchant-wallet-sdk/issues"
+  },
+  "homepage": "https://github.com/Satangtech/merchant-wallet-sdk#readme",
+  "devDependencies": {
+    "@testdeck/mocha": "^0.3.3",
+    "@types/chai": "^4.3.4",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "^18.13.0",
+    "@types/node-fetch": "^2.6.2",
+    "chai": "^4.3.7",
+    "mocha": "^10.2.0",
+    "node-fetch": "2",
+    "ts-node": "^10.9.1",
+    "tslint": "^6.1.3",
+    "typescript": "^4.9.5"
+  },
+  "dependencies": {
+    "firovm-sdk": "0.0.17-alpha"
+  }
+}
