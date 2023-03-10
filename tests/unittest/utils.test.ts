@@ -5,16 +5,16 @@ import {
   approveHash,
   buildTransaction,
   fromHexAddress,
-  getRandomInt,
   getRandomIntAsString,
+  randomInt256,
 } from "../../lib";
 
 @suite
 class UtilTest {
   @test
-  getRandomInt() {
-    const randomInt = getRandomInt();
-    expect(randomInt).to.be.a("number");
+  randomInt256() {
+    const randomInt = randomInt256();
+    expect(randomInt).to.be.a("bigint");
   }
 
   @test

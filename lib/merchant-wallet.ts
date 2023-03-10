@@ -90,14 +90,14 @@ export class MerchantWallet {
     const contract = new this.client.Contract(SafeABI, await this.address());
     const txId = await contract.methods
       .setup(
-        owners,
-        threshold,
-        AddressZero,
-        "0x",
-        AddressZero,
-        AddressZero,
-        0,
-        AddressZero
+        owners, // List of Safe owners.
+        threshold, // Number of required confirmations for a Safe transaction.
+        AddressZero, // Contract address for optional delegate call.
+        "0x", // Data payload for optional delegate call.
+        AddressZero, // Handler for fallback calls to this contract
+        AddressZero, // Token that should be used for the payment (0 is ETH)
+        0, // Value that should be paid
+        AddressZero // Address that should receive the payment (or 0 if tx.origin)
       )
       .send({
         from: this.account,

@@ -1,6 +1,7 @@
 import { MnemonicAccount, PrivkeyAccount } from "firovm-sdk";
 // @ts-ignore
 import { Address, Networks } from "fvmcore-lib";
+import crypto from "crypto";
 
 export interface TxOptions {
   gasPrice?: number;
@@ -9,18 +10,14 @@ export interface TxOptions {
   input?: string;
 }
 
-export const getRandomInt = (
-  min = 0,
-  max: number = Number.MAX_SAFE_INTEGER
-): number => {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+export const randomInt256 = (): BigInt => {
+  const randomBytes = crypto.randomBytes(32);
+  const hexString = randomBytes.toString("hex");
+  return BigInt("0x" + hexString);
 };
 
-export const getRandomIntAsString = (
-  min = 0,
-  max: number = Number.MAX_SAFE_INTEGER
-): string => {
-  return getRandomInt(min, max).toString();
+export const getRandomIntAsString = (): string => {
+  return randomInt256().toString();
 };
 
 export const fromHexAddress = (
