@@ -21,7 +21,10 @@ const account = new PrivkeyAccount(context, "privkey"); // or MnemonicAccount
 const factory = new Factory(client, account);
 
 const singletonTxId = await factory.deploySingleton(TxOptions?);
+// singletonTxId: 0c10e2b83113e1f04ac2d6fe9bf0619cf8867a4ec32ac39466cbf5be7e072797
+
 const proxyTxId = await factory.deployProxy(TxOptions?);
+// proxyTxId: 0c10e2b83113e1f04ac2d6fe9bf0619cf8867a4ec32ac39466cbf5be7e072797
 
 await factory.addressSingleton(); // 0x0000000000000000000000000000000Singleton
 await factory.addressProxy(); // 0x0000000000000000000000000000ProxyAddress
@@ -49,7 +52,10 @@ interface TxOptions {
 }
 
 const merchantWallet = new MerchantWallet(context, client, account);
+// merchantWallet: Object of MerchantWallet
+
 const createWalletTxId = await merchantWallet.deploy(TxOptions?);
+// createWalletTxId: 0c10e2b83113e1f04ac2d6fe9bf0619cf8867a4ec32ac39466cbf5be7e072797
 ```
 
 #### Recover a merchant wallet
@@ -62,6 +68,7 @@ const merchantWallet = new MerchantWallet(
   account,
   merchantAddress
 );
+await merchantWallet.address(); // 0x0000000000000000000MerchantWalletAddress
 ```
 
 #### Setup a merchant wallet
@@ -75,25 +82,33 @@ const owner = [
 const threshold = 2;
 
 const setupTxId = await merchantWallet.setup(owner, threshold, TxOptions?);
+// setupTxId: 0c10e2b83113e1f04ac2d6fe9bf0619cf8867a4ec32ac39466cbf5be7e072797
 ```
 
 #### Get Threshold of the merchant wallet
 
 ```typescript
 const threshold = await merchantWallet.getThreshold();
+// threshold: 2
 ```
 
 #### Get Owner of the merchant wallet
 
 ```typescript
 const owner = await merchantWallet.getOwners();
+// owner: [
+//   "0x000000000000000000000000000000000000add1",
+//   "0x000000000000000000000000000000000000add2",
+//   "0x000000000000000000000000000000000000add3",
+// ];
 ```
 
 #### Deposit to the merchant wallet
 
 ```typescript
 const amount = 100000000; // satoshi
-const txHash = await merchantWallet.deposit(amount);
+const txId = await merchantWallet.deposit(amount);
+// txId: 0c10e2b83113e1f04ac2d6fe9bf0619cf8867a4ec32ac39466cbf5be7e072797
 
 // Send token to merchant wallet
 const erc20 = new client.Contract(abiERC20, Erc20ContractAddress);
@@ -112,12 +127,14 @@ const txid = await erc20.methods
 ```typescript
 // Get balance of natives
 const balance = await merchantWallet.getBalance();
+// balance: 100000000
 
 // Get balance of erc20
 const erc20 = new client.Contract(abiERC20, Erc20ContractAddress);
 const balance = await erc20.methods
   .balanceOf(await merchantWallet.address())
   .call();
+// balance: { '0': '10000000000000000000', __length__: 1 }
 ```
 
 #### Create Transaction and Approve Transaction
@@ -127,12 +144,19 @@ const value = 10000; // satoshi
 const to = "0x000000000000000000000000000000000000add4";
 
 const merchantTx = await merchantWallet.buildTransaction({ to, value });
+// merchantTx: {
+//   to: "0x000000000000000000000000000000000000add4",
+//   value: 10000,
+// }
+
 const merchantTxHash = await merchantWallet.getTransactionHash(merchantTx);
+// merchantTxHash: 0xca51916524321d9ad4cd316b26866dbda3125cb5a06a134012d4c373f60ed165
 
 // Send merchantTxHash to another owner to approve
 // Or another owner can build transaction and approve transaction by himself
 // Need to approve by threshold number of owners
 const txIdApprove = await merchantWallet.approveTransaction(merchantTxHash);
+// txIdApprove: 0c10e2b83113e1f04ac2d6fe9bf0619cf8867a4ec32ac39466cbf5be7e072797
 ```
 
 #### Execute Transaction of the merchant wallet
@@ -142,6 +166,10 @@ const merchantTx = await merchantWallet.buildTransaction({
   to: "0x000000000000000000000000000000000000add5",
   value: 10000, // satoshi
 });
+// merchantTx: {
+//   to: "0x000000000000000000000000000000000000add5",
+//   value: 10000,
+// }
 
 // Can execute transaction when approved by threshold number of owners
 // In this case, threshold is 2, so need to approve by 2 owners
@@ -154,6 +182,7 @@ const executeTxId = await merchantWallet.executeTransaction(
   merchantTx,
   addressApprover
 );
+// executeTxId: 0c10e2b83113e1f04ac2d6fe9bf0619cf8867a4ec32ac39466cbf5be7e072797
 ```
 
 #### Execute Transaction with ERC20 Token
@@ -168,6 +197,10 @@ const merchantTx = await merchantWallet.buildTransaction({
   to: Erc20ContractAddress,
   data,
 });
+// merchantTx: {
+//   to: "0x000000000000000000000Erc20ContractAddress",
+//   data: "0xa9059cbb0000000000000",
+// }
 
 // getTransactionHash and approveTransaction is the same
 
@@ -180,6 +213,7 @@ const executeTxId = await merchantWallet.executeTransaction(
   merchantTx,
   addressApprover
 );
+// executeTxId: 0c10e2b83113e1f04ac2d6fe9bf0619cf8867a4ec32ac39466cbf5be7e072797
 ```
 
 #### Change Threshold of the merchant wallet
@@ -187,6 +221,10 @@ const executeTxId = await merchantWallet.executeTransaction(
 ```typescript
 const newThreshold = 3;
 const changeThresholdTx = merchantWallet.changeThreshold(newThreshold);
+// merchantTx: {
+//   to: "0x000000000000000000000MerchantWalletAddress", // await merchantWallet.address()
+//   data: "0x6d4ce63c0000000000000003", // ABI Encode of changeThreshold
+// }
 
 // getTransactionHash and approveTransaction is the same
 
@@ -207,6 +245,10 @@ const executeTxId = await merchantWallet.executeTransaction(
 const newOwner = "0x000000000000000000000000000000000000add4";
 const newThreshold = 3;
 const addOwnerTx = merchantWallet.addOwner(newOwner, newThreshold);
+// addOwnerTx: {
+//   to: "0x000000000000000000000MerchantWalletAddress", // await merchantWallet.address()
+//   data: "0x00000000000ABIEncodeForAddOwner", // ABI Encode of addOwner
+// }
 
 // getTransactionHash and approveTransaction is the same
 
@@ -219,6 +261,7 @@ const executeTxId = await merchantWallet.executeTransaction(
   addOwnerTx,
   addressApprover
 );
+// executeTxId: 0c10e2b83113e1f04ac2d6fe9bf0619cf8867a4ec32ac39466cbf5be7e072797
 ```
 
 #### Remove Owner from the merchant wallet
@@ -227,6 +270,10 @@ const executeTxId = await merchantWallet.executeTransaction(
 const ownerToRemove = "0x000000000000000000000000000000000000add3";
 const newThreshold = 2;
 const removeOwnerTx = merchantWallet.removeOwner(ownerToRemove, newThreshold);
+// removeOwnerTx: {
+//   to: "0x000000000000000000000MerchantWalletAddress", // await merchantWallet.address()
+//   data: "0x00000000000ABIEncodeForRemoveOwner", // ABI Encode of removeOwner
+// }
 
 // getTransactionHash and approveTransaction is the same
 
@@ -239,4 +286,5 @@ const executeTxId = await merchantWallet.executeTransaction(
   removeOwnerTx,
   addressApprover
 );
+// executeTxId: 0c10e2b83113e1f04ac2d6fe9bf0619cf8867a4ec32ac39466cbf5be7e072797
 ```
