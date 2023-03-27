@@ -288,3 +288,11 @@ const executeTxId = await merchantWallet.executeTransaction(
 );
 // executeTxId: 0c10e2b83113e1f04ac2d6fe9bf0619cf8867a4ec32ac39466cbf5be7e072797
 ```
+
+#### Run Test
+
+- Download firovm.tar from [firovm.tar](https://satangcom-my.sharepoint.com/:u:/g/personal/chitrathep_satang_com/EbEHR4R8oGNCuIEY1TTowQgBET1NRK5rKU5qh0zNt_FNtA?e=VWNqMn) and change filename to firovm.tar
+
+```bash
+yarn test:it
+```

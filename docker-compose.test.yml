@@ -1,6 +1,6 @@
 services:
   firovm:
-    image: satangtech/firovm-poa:2b225f0791ebb560d299780364965254cace247f
+    image: satangtech/firovm-poa:d98e284274c1e95bb36ed61d1566214b7148f698
     tty: true
     stdin_open: true
     command: -connect=0
