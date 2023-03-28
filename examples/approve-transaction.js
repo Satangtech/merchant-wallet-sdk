@@ -17,17 +17,22 @@ const generateToAddress = async () => {
   ]);
 };
 
-const deployMerchantWallet = async () => {
+const approveTransaction = async () => {
   context
     .withProxy("0x91ead1c01f00bffb97d9e11ddf23468d8f1ce963")
     .withSingleton("0x97b30d3a724eaf24dc422de0e08e4edcdb3009f0");
-  const merchantWallet = new MerchantWallet(context, client, account);
-  const txId = await merchantWallet.deploy();
-  await generateToAddress();
+  const merchantWallet = new MerchantWallet(
+    context,
+    client,
+    account,
+    "0x864fea261cd101c30a882c8e80b47792041aa8d8"
+  );
 
+  const txId = await merchantWallet.approveTransaction(
+    "0xf5c7bc2c564b56ddf3516ded8e83c22444a480f1ff9be486e1145f429975d122"
+  );
+  await generateToAddress();
   const { result, error } = await rpcClient.getTransactionReceipt(txId);
-  console.log(result);
-  const merchantAddress = await merchantWallet.address();
-  console.log("merchantAddress:", merchantAddress);
+  console.log("result:", result);
 };
-deployMerchantWallet();
+approveTransaction();

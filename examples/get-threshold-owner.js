@@ -10,24 +10,20 @@ const account = new PrivkeyAccount(
   "UV3NTQDeZqMUSW5d1qj3wD9Ds48H2KCB3b3ttuvRp45qBzSkATcU"
 );
 
-const generateToAddress = async () => {
-  await rpcClient.rpc("generatetoaddress", [
-    1,
-    "TS7cQRdd6uU1wu2s94CmYsfe3WNUTctNih",
-  ]);
-};
-
-const deployMerchantWallet = async () => {
+const getThresholdAndOwner = async () => {
   context
     .withProxy("0x91ead1c01f00bffb97d9e11ddf23468d8f1ce963")
     .withSingleton("0x97b30d3a724eaf24dc422de0e08e4edcdb3009f0");
-  const merchantWallet = new MerchantWallet(context, client, account);
-  const txId = await merchantWallet.deploy();
-  await generateToAddress();
+  const merchantWallet = new MerchantWallet(
+    context,
+    client,
+    account,
+    "0x864fea261cd101c30a882c8e80b47792041aa8d8"
+  );
 
-  const { result, error } = await rpcClient.getTransactionReceipt(txId);
-  console.log(result);
-  const merchantAddress = await merchantWallet.address();
-  console.log("merchantAddress:", merchantAddress);
+  const threshold = await merchantWallet.getThreshold();
+  const owners = await merchantWallet.getOwners();
+  console.log("Threshold: ", threshold);
+  console.log("Owners: ", owners);
 };
-deployMerchantWallet();
+getThresholdAndOwner();

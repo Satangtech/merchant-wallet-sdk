@@ -19,13 +19,13 @@ const generateToAddress = async () => {
 
 const setupMerchantWallet = async () => {
   context
-    .withProxy("0xb6ec75fc4caca826f5c71aabced67369d1cb5f86")
-    .withSingleton("0x7946a92a12a28b14394e7a91e7404fa56efd882e");
+    .withProxy("0x91ead1c01f00bffb97d9e11ddf23468d8f1ce963")
+    .withSingleton("0x97b30d3a724eaf24dc422de0e08e4edcdb3009f0");
   const merchantWallet = new MerchantWallet(
     context,
     client,
     account,
-    "0x02c1dfab4b6503c3d259409965d133c1c69e6fd2"
+    "0x864fea261cd101c30a882c8e80b47792041aa8d8"
   );
   const owners = [
     "0xb118e03f6575aa270673c8d86d6dcb07eb2d9221",
