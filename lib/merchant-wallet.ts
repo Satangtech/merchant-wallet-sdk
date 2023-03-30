@@ -1,4 +1,5 @@
 import { Client, MnemonicAccount, PrivkeyAccount } from "firovm-sdk";
+import { AbiERC1155, AbiERC721 } from "../tests/integration/data/abi";
 import { Context } from "./context";
 import { ProxyABI, SafeABI } from "./data/abi";
 import {
@@ -299,5 +300,119 @@ export class MerchantWallet {
       data,
     });
     return tx;
+  }
+
+  async safeTransferFromERC721(
+    erc721Address: string,
+    from: string,
+    to: string,
+    tokenId: number
+  ) {
+    const contract = new this.client.Contract(AbiERC721, erc721Address);
+    const encodeData = contract.methods
+      .safeTransferFrom(from, to, tokenId)
+      .encodeABI();
+    return await this.buildTransaction({
+      to: erc721Address,
+      data: encodeData,
+    });
+  }
+
+  async safeTransferFromERC1155(
+    erc1155Address: string,
+    from: string,
+    to: string,
+    tokenId: number,
+    amount: number,
+    data: string = "0x"
+  ) {
+    const contract = new this.client.Contract(AbiERC1155, erc1155Address);
+    const encodeData = contract.methods
+      .safeTransferFrom(from, to, tokenId, amount, data)
+      .encodeABI();
+    return await this.buildTransaction({
+      to: erc1155Address,
+      data: encodeData,
+    });
+  }
+
+  async approveERC721(erc721Address: string, to: string, tokenId: number) {
+    const contract = new this.client.Contract(AbiERC721, erc721Address);
+    const encodeData = contract.methods.approve(to, tokenId).encodeABI();
+    return await this.buildTransaction({
+      to: erc721Address,
+      data: encodeData,
+    });
+  }
+
+  async setApprovalForAllERC721(
+    erc721Address: string,
+    operator: string,
+    approved: boolean
+  ) {
+    const contract = new this.client.Contract(AbiERC721, erc721Address);
+    const encodeData = contract.methods
+      .setApprovalForAll(operator, approved)
+      .encodeABI();
+    return await this.buildTransaction({
+      to: erc721Address,
+      data: encodeData,
+    });
+  }
+
+  async setApprovalForAllERC1155(
+    erc1155Address: string,
+    operator: string,
+    approved: boolean
+  ) {
+    const contract = new this.client.Contract(AbiERC1155, erc1155Address);
+    const encodeData = contract.methods
+      .setApprovalForAll(operator, approved)
+      .encodeABI();
+    return await this.buildTransaction({
+      to: erc1155Address,
+      data: encodeData,
+    });
+  }
+
+  async transferFromERC721(
+    erc721Address: string,
+    from: string,
+    to: string,
+    tokenId: number
+  ) {
+    const contract = new this.client.Contract(AbiERC721, erc721Address);
+    const encodeData = contract.methods
+      .transferFrom(from, to, tokenId)
+      .encodeABI();
+    return await this.buildTransaction({
+      to: erc721Address,
+      data: encodeData,
+    });
+  }
+
+  async safeBatchTransferFromERC1155(
+    erc1155Address: string,
+    from: string,
+    to: string,
+    tokenIds: number[],
+    amounts: number[],
+    data: string = "0x"
+  ) {
+    const contract = new this.client.Contract(AbiERC1155, erc1155Address);
+    const encodeData = contract.methods
+      .safeBatchTransferFrom(from, to, tokenIds, amounts, data)
+      .encodeABI();
+    return await this.buildTransaction({
+      to: erc1155Address,
+      data: encodeData,
+    });
+  }
+
+  async balanceOfERC721(erc721Address: string): Promise<number> {
+    const contract = new this.client.Contract(AbiERC721, erc721Address);
+    return Number(
+      (await contract.methods.balanceOf(await this.address()).call())["0"]
+    );
   }
 }
