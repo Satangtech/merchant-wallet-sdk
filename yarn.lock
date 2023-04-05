@@ -1429,10 +1429,10 @@ find-up@5.0.0:
     locate-path "^6.0.0"
     path-exists "^4.0.0"
 
-firovm-sdk@0.0.19-alpha:
-  version "0.0.19-alpha"
-  resolved "https://registry.yarnpkg.com/firovm-sdk/-/firovm-sdk-0.0.19-alpha.tgz#c893acde80518c14dab99c5c0d59b5032d4e8a62"
-  integrity sha512-X+bAV2cH359trWf1O8+SLzl0u7F6FuqEtRAT6jv18ZTDjEG5xcGy/3EghQCTokWRk6z0o+8kDl0b1yJ42J9Mpw==
+firovm-sdk@0.0.20-alpha:
+  version "0.0.20-alpha"
+  resolved "https://registry.yarnpkg.com/firovm-sdk/-/firovm-sdk-0.0.20-alpha.tgz#e2232ba7bc3e40bd6d077d3b716cfcc931233ef9"
+  integrity sha512-LStCN9gqCDJVvq15EWErEGCp6aNob7rEQK5A8dgMANfgT08+qpKhVMd6N0eut3LJFXuzeazsrYQ9+9ydBUAbJQ==
   dependencies:
     "@noble/secp256k1" "^1.6.3"
     "@types/lodash" "^4.14.178"
