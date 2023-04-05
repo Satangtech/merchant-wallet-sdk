@@ -318,10 +318,102 @@ class MerchantWalletTest extends IntegrationTest {
   }
 
   @test
+  async createMintERC721withMerchant() {
+    const merchantWallet = new MerchantWallet(
+      this.context,
+      this.client,
+      this.account.acc1,
+      SafeAddress
+    );
+    const erc721 = new this.client.Contract(AbiERC721, Erc721Address);
+    const encodeData = await erc721.methods.mint(SafeAddress, 0).encodeABI();
+    const merchantTx = await merchantWallet.buildTransaction({
+      to: `0x${Erc721Address}`,
+      data: encodeData,
+    });
+    merchantTxHash = await merchantWallet.getTransactionHash(merchantTx);
+    expect(merchantTxHash).to.be.a("string");
+  }
+
+  @test
+  async approveTransactionMint1() {
+    const merchantWallet = new MerchantWallet(
+      this.context,
+      this.client,
+      this.account.acc1,
+      SafeAddress
+    );
+    const txId = await merchantWallet.approveTransaction(merchantTxHash);
+    expect(txId).to.be.a("string");
+    await this.generateToAddress();
+
+    const { result, error } = await this.rpcClient.getTransactionReceipt(txId);
+    expect(error).to.be.null;
+    expect(result).to.be.a("array");
+    expect(result[0].excepted).to.be.equal("None");
+  }
+
+  @test
+  async approveTransactionMint2() {
+    const merchantWallet = new MerchantWallet(
+      this.context,
+      this.client,
+      this.account.acc2,
+      SafeAddress
+    );
+    const txId = await merchantWallet.approveTransaction(merchantTxHash);
+    expect(txId).to.be.a("string");
+    await this.generateToAddress();
+
+    const { result, error } = await this.rpcClient.getTransactionReceipt(txId);
+    expect(error).to.be.null;
+    expect(result).to.be.a("array");
+    expect(result[0].excepted).to.be.equal("None");
+  }
+
+  @test
+  async executeTransactionMint() {
+    const merchantWallet = new MerchantWallet(
+      this.context,
+      this.client,
+      this.account.acc1,
+      SafeAddress
+    );
+    const erc721 = new this.client.Contract(AbiERC721, Erc721Address);
+    const encodeData = await erc721.methods.mint(SafeAddress, 0).encodeABI();
+    const merchantTx = await merchantWallet.buildTransaction({
+      to: `0x${Erc721Address}`,
+      data: encodeData,
+    });
+    const addressApprover = [
+      this.account.acc1.hex_address(),
+      this.account.acc2.hex_address(),
+    ];
+    const txId = await merchantWallet.executeTransaction(
+      merchantTx,
+      addressApprover
+    );
+    expect(txId).to.be.a("string");
+    await this.generateToAddress();
+
+    const { result, error } = await this.rpcClient.getTransactionReceipt(txId);
+    expect(error).to.be.null;
+    expect(result).to.be.a("array");
+    expect(result[0].excepted).to.be.equal("None");
+  }
+
+  @test
+  async getOwnerERC721() {
+    const erc721 = this.client.ERC721(Erc721Address);
+    const owner = await erc721.ownerOf(0);
+    expect(owner.toLowerCase()).to.be.equal(SafeAddress);
+  }
+
+  @test
   async mintERC721() {
     const erc721 = new this.client.Contract(AbiERC721, Erc721Address);
     const txid = await erc721.methods
-      .mint(this.account.miner.hex_address(), 0)
+      .mint(this.account.miner.hex_address(), 1)
       .send({ from: this.account.miner });
     expect(txid).to.be.a("string");
     await this.generateToAddress();
@@ -334,10 +426,15 @@ class MerchantWalletTest extends IntegrationTest {
 
   @test
   async transferERC721toMerchant() {
-    const erc721 = new this.client.Contract(AbiERC721, Erc721Address);
-    const txid = await erc721.methods
-      .transferFrom(this.account.miner.hex_address(), SafeAddress, 0)
-      .send({ from: this.account.miner });
+    const erc721 = this.client.ERC721(Erc721Address);
+    const txid = await erc721.transferFrom(
+      this.account.miner.hex_address(),
+      SafeAddress,
+      1,
+      {
+        from: this.account.miner,
+      }
+    );
     expect(txid).to.be.a("string");
     await this.generateToAddress();
 
@@ -357,7 +454,7 @@ class MerchantWalletTest extends IntegrationTest {
     );
     const balance = await merchantWallet.balanceOfERC721(Erc721Address);
     expect(balance).to.be.a("number");
-    expect(balance).to.be.equal(1);
+    expect(balance).to.be.equal(2);
   }
 
   @test
@@ -450,7 +547,7 @@ class MerchantWalletTest extends IntegrationTest {
 
     const balance = await merchantWallet.balanceOfERC721(Erc721Address);
     expect(balance).to.be.a("number");
-    expect(balance).to.be.equal(0);
+    expect(balance).to.be.equal(1);
   }
 
   @test
