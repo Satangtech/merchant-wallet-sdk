@@ -289,6 +289,115 @@ const executeTxId = await merchantWallet.executeTransaction(
 // executeTxId: 0c10e2b83113e1f04ac2d6fe9bf0619cf8867a4ec32ac39466cbf5be7e072797
 ```
 
+#### NFT
+
+```typescript
+// import from typescript or json file
+import { AbiERC721 } from "./abi/erc721";
+
+const Erc721Address = "0x000000000000000000000000000Erc721Address";
+const erc721 = new client.Contract(AbiERC721, Erc721Address);
+
+// transferFrom
+const from = "0x000000000000000000000000000000000000from";
+const to = "0x000000000000000000000000000000000000to";
+const tokenId = 0;
+const encodeData = await erc721.methods
+  .transferFrom(from, to, tokenId)
+  .encodeABI();
+
+const merchantTx = await merchantWallet.buildTransaction({
+  to: Erc721Address,
+  data: encodeData,
+});
+
+// getTransactionHash and approveTransaction is the same
+
+const addressApprover = [
+  "0x000000000000000000000000000000000000add1",
+  "0x000000000000000000000000000000000000add2",
+];
+const executeTxId = await merchantWallet.executeTransaction(
+  merchantTx,
+  addressApprover
+);
+// executeTxId: 0c10e2b83113e1f04ac2d6fe9bf0619cf8867a4ec32ac39466cbf5be7e072797
+```
+
+#### ERC721
+
+```typescript
+// This section will be about the SDK method that helps make it easier to use.
+// safeTransferFromERC721
+// approveERC721
+// setApprovalForAllERC721
+// transferFromERC721
+// balanceOfERC721
+
+// Example for balanceOfERC721
+const Erc721Address = "0x000000000000000000000000000Erc721Address";
+const balance = await merchantWallet.balanceOfERC721(Erc721Address);
+// balance: 10
+
+// Example for safeTransferFromERC721
+const from = "0x000000000000000000000000000000000000from";
+const to = "0x000000000000000000000000000000000000to";
+const tokenId = 0;
+const merchantTx = await merchantWallet.transferFromERC721(
+  Erc721Address,
+  from,
+  to,
+  tokenId
+);
+
+// getTransactionHash and approveTransaction is the same
+
+const addressApprover = [
+  "0x000000000000000000000000000000000000add1",
+  "0x000000000000000000000000000000000000add2",
+];
+const executeTxId = await merchantWallet.executeTransaction(
+  merchantTx,
+  addressApprover
+);
+// executeTxId: 0c10e2b83113e1f04ac2d6fe9bf0619cf8867a4ec32ac39466cbf5be7e072797
+```
+
+#### ERC1155
+
+```typescript
+// This section will be about the SDK method that helps make it easier to use.
+// safeTransferFromERC1155
+// setApprovalForAllERC1155
+// safeBatchTransferFromERC1155
+
+// Example for safeTransferFromERC1155
+const Erc11551Address = "0x000000000000000000000000000Erc11551Address";
+const from = "0x000000000000000000000000000000000000from";
+const to = "0x000000000000000000000000000000000000to";
+const tokenId = 0;
+const amount = 10;
+const merchantTx = await merchantWallet.safeTransferFromERC1155(
+  Erc11551Address,
+  from,
+  to,
+  tokenId,
+  amount
+);
+
+// getTransactionHash and approveTransaction is the same
+
+const addressApprover = [
+  "0x000000000000000000000000000000000000add1",
+  "0x000000000000000000000000000000000000add2",
+];
+const executeTxId = await merchantWallet.executeTransaction(
+  merchantTx,
+  addressApprover
+);
+// executeTxId: 0c10e2b83113e1f04ac2d6fe9bf0619cf8867a4ec32ac39466cbf5be7e072797
+```
+
 #### Run Test
 
 - Download firovm.tar from [firovm.tar](https://satangcom-my.sharepoint.com/:u:/g/personal/chitrathep_satang_com/EbEHR4R8oGNCuIEY1TTowQgBET1NRK5rKU5qh0zNt_FNtA?e=VWNqMn) and change filename to firovm.tar
