@@ -404,8 +404,13 @@ class MerchantWalletTest extends IntegrationTest {
 
   @test
   async getOwnerERC721() {
-    const erc721 = this.client.ERC721(Erc721Address);
-    const owner = await erc721.ownerOf(0);
+    const merchantWallet = new MerchantWallet(
+      this.context,
+      this.client,
+      this.account.acc1,
+      SafeAddress
+    );
+    const owner = await merchantWallet.ownerOfERC721(Erc721Address, "0");
     expect(owner.toLowerCase()).to.be.equal(SafeAddress);
   }
 
@@ -453,8 +458,8 @@ class MerchantWalletTest extends IntegrationTest {
       SafeAddress
     );
     const balance = await merchantWallet.balanceOfERC721(Erc721Address);
-    expect(balance).to.be.a("number");
-    expect(balance).to.be.equal(2);
+    expect(balance).to.be.a("string");
+    expect(balance).to.be.equal("2");
   }
 
   @test
@@ -546,8 +551,8 @@ class MerchantWalletTest extends IntegrationTest {
     expect(owner).to.be.equal(this.account.acc5.hex_address());
 
     const balance = await merchantWallet.balanceOfERC721(Erc721Address);
-    expect(balance).to.be.a("number");
-    expect(balance).to.be.equal(1);
+    expect(balance).to.be.a("string");
+    expect(balance).to.be.equal("1");
   }
 
   @test
