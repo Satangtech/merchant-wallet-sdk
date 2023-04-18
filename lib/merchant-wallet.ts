@@ -306,11 +306,23 @@ export class MerchantWallet {
     erc721Address: string,
     from: string,
     to: string,
-    tokenId: number
-  ) {
+    tokenId: number,
+    data: string = "0x"
+  ): Promise<{
+    to: string;
+    value: string | number;
+    data: string;
+    operation: number;
+    safeTxGas: string | number;
+    baseGas: string | number;
+    gasPrice: string | number;
+    gasToken: string;
+    refundReceiver: string;
+    nonce: number;
+  }> {
     const contract = new this.client.Contract(AbiERC721, erc721Address);
     const encodeData = contract.methods
-      .safeTransferFrom(from, to, tokenId)
+      .safeTransferFrom(from, to, tokenId, data)
       .encodeABI();
     return await this.buildTransaction({
       to: erc721Address,
