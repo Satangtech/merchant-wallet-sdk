@@ -429,6 +429,23 @@ export class MerchantWallet {
     return await nft.balanceOf(await this.address());
   }
 
+  async balanceOfERC1155(
+    erc1155Address: string,
+    tokenId: string
+  ): Promise<number> {
+    const nft = this.client.ERC1155(erc1155Address);
+    return await nft.balanceOf(await this.address(), tokenId);
+  }
+
+  async balanceOfBatchERC1155(
+    erc1155Address: string,
+    owners: string[],
+    tokenIds: string[]
+  ): Promise<number[]> {
+    const nft = this.client.ERC1155(erc1155Address);
+    return await nft.balanceOfBatch(owners, tokenIds);
+  }
+
   async ownerOfERC721(erc721Address: string, tokenId: string): Promise<string> {
     const nft = this.client.ERC721(erc721Address);
     return await nft.ownerOf(tokenId);
@@ -448,6 +465,15 @@ export class MerchantWallet {
     operator: string
   ): Promise<boolean> {
     const nft = this.client.ERC721(erc721Address);
+    return await nft.isApprovedForAll(owner, operator);
+  }
+
+  async isApprovedForAll1155(
+    erc1155Address: string,
+    owner: string,
+    operator: string
+  ): Promise<boolean> {
+    const nft = this.client.ERC1155(erc1155Address);
     return await nft.isApprovedForAll(owner, operator);
   }
 }
