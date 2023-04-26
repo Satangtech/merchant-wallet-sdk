@@ -1,6 +1,6 @@
 {
   "name": "merchant-wallet-sdk",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Merchant Wallet sdk for interact with firovm",
   "main": "dist/lib/index.js",
   "types": "dist/lib/index.d.ts",
@@ -14,7 +14,7 @@
     "prepublishOnly": "yarn test",
     "test": "npx mocha -r ts-node/register 'tests/unittest/**/*.ts'",
     "test:integration": "npx mocha --timeout 1000000000 -r ts-node/register 'tests/integration/**/*.ts'",
-    "test:setup": "[ ! -d .firovm ] && tar xfv firovm.tar || echo '.firovm directory already exists'",
+    "test:setup": "bash download-stage.sh && [ ! -d .firovm ] && tar xfv firovm.tar || echo '.firovm directory already exists'",
     "test:it": "yarn test:setup && docker compose -f docker-compose.test.yml up --build it-test",
     "test:down": "rm -rf .firovm && docker compose -f docker-compose.test.yml down -v && yarn rm:dangling",
     "rm:dangling": "if [ -n \"$(docker images -f \"dangling=true\" -q)\" ]; then docker rmi $(docker images -f \"dangling=true\" -q); else echo \"No images found\"; fi"
@@ -43,6 +43,6 @@
     "typescript": "^4.9.5"
   },
   "dependencies": {
-    "firovm-sdk": "0.0.19-alpha"
+    "firovm-sdk": "0.0.24-alpha"
   }
 }

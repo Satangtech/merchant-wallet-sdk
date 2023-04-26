@@ -1,9 +1,9 @@
 import { expect } from "chai";
 import { Client, PrivkeyAccount, RPCClient } from "firovm-sdk";
 import { Context, Testnet } from "../../lib";
-import { abiERC20 } from "./data/abi";
+import { AbiERC1155, abiERC20, AbiERC721 } from "./data/abi";
 import { testAddresses, testPrivkeys } from "./data/accounts";
-import { byteCodeContractERC20 } from "./data/bytecode";
+import { byteCodeContractERC20, ByteCodeERC1155, ByteCodeERC721 } from "./data/bytecode";
 
 export class IntegrationTest {
   rpcUrl: URL;
@@ -81,6 +81,32 @@ export class IntegrationTest {
   async deployContractERC20(): Promise<string> {
     const contract = new this.client.Contract(abiERC20);
     const contractDeploy = contract.deploy(byteCodeContractERC20);
+    const txid = await contractDeploy.send({ from: this.account.acc1 });
+    expect(txid).to.be.a("string");
+    await this.generateToAddress();
+
+    const response = await this.rpcClient.getTransactionReceipt(txid);
+    expect(response.result.length).to.be.greaterThan(0);
+    expect(response.result[0].contractAddress).to.be.a("string");
+    return response.result[0].contractAddress;
+  }
+
+  async deployContractERC721(): Promise<string> {
+    const contract = new this.client.Contract(AbiERC721);
+    const contractDeploy = contract.deploy(ByteCodeERC721);
+    const txid = await contractDeploy.send({ from: this.account.acc1 });
+    expect(txid).to.be.a("string");
+    await this.generateToAddress();
+
+    const response = await this.rpcClient.getTransactionReceipt(txid);
+    expect(response.result.length).to.be.greaterThan(0);
+    expect(response.result[0].contractAddress).to.be.a("string");
+    return response.result[0].contractAddress;
+  }
+
+  async deployContractERC1155(): Promise<string> {
+    const contract = new this.client.Contract(AbiERC1155);
+    const contractDeploy = contract.deploy(ByteCodeERC1155);
     const txid = await contractDeploy.send({ from: this.account.acc1 });
     expect(txid).to.be.a("string");
     await this.generateToAddress();

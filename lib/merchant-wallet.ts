@@ -1,6 +1,6 @@
 import { Client, MnemonicAccount, PrivkeyAccount } from "firovm-sdk";
 import { Context } from "./context";
-import { ProxyABI, SafeABI } from "./data/abi";
+import { ProxyABI, SafeABI, AbiERC1155, AbiERC721 } from "./data/abi";
 import {
   AddressZero,
   buildSignatureBytes,
@@ -299,5 +299,181 @@ export class MerchantWallet {
       data,
     });
     return tx;
+  }
+
+  async safeTransferFromERC721(
+    erc721Address: string,
+    from: string,
+    to: string,
+    tokenId: number,
+    data: string = "0x"
+  ): Promise<{
+    to: string;
+    value: string | number;
+    data: string;
+    operation: number;
+    safeTxGas: string | number;
+    baseGas: string | number;
+    gasPrice: string | number;
+    gasToken: string;
+    refundReceiver: string;
+    nonce: number;
+  }> {
+    const contract = new this.client.Contract(AbiERC721, erc721Address);
+    const encodeData = contract.methods
+      .safeTransferFrom(from, to, tokenId, data)
+      .encodeABI();
+    return await this.buildTransaction({
+      to: erc721Address,
+      data: encodeData,
+    });
+  }
+
+  async safeTransferFromERC1155(
+    erc1155Address: string,
+    from: string,
+    to: string,
+    tokenId: number | string,
+    amount: number | string,
+    data: string = "0x"
+  ) {
+    const contract = new this.client.Contract(AbiERC1155, erc1155Address);
+    const encodeData = contract.methods
+      .safeTransferFrom(from, to, tokenId, amount, data)
+      .encodeABI();
+    return await this.buildTransaction({
+      to: erc1155Address,
+      data: encodeData,
+    });
+  }
+
+  async approveERC721(
+    erc721Address: string,
+    to: string,
+    tokenId: number | string
+  ) {
+    const contract = new this.client.Contract(AbiERC721, erc721Address);
+    const encodeData = contract.methods.approve(to, tokenId).encodeABI();
+    return await this.buildTransaction({
+      to: erc721Address,
+      data: encodeData,
+    });
+  }
+
+  async setApprovalForAllERC721(
+    erc721Address: string,
+    operator: string,
+    approved: boolean
+  ) {
+    const contract = new this.client.Contract(AbiERC721, erc721Address);
+    const encodeData = contract.methods
+      .setApprovalForAll(operator, approved)
+      .encodeABI();
+    return await this.buildTransaction({
+      to: erc721Address,
+      data: encodeData,
+    });
+  }
+
+  async setApprovalForAllERC1155(
+    erc1155Address: string,
+    operator: string,
+    approved: boolean
+  ) {
+    const contract = new this.client.Contract(AbiERC1155, erc1155Address);
+    const encodeData = contract.methods
+      .setApprovalForAll(operator, approved)
+      .encodeABI();
+    return await this.buildTransaction({
+      to: erc1155Address,
+      data: encodeData,
+    });
+  }
+
+  async transferFromERC721(
+    erc721Address: string,
+    from: string,
+    to: string,
+    tokenId: number | string
+  ) {
+    const contract = new this.client.Contract(AbiERC721, erc721Address);
+    const encodeData = contract.methods
+      .transferFrom(from, to, tokenId)
+      .encodeABI();
+    return await this.buildTransaction({
+      to: erc721Address,
+      data: encodeData,
+    });
+  }
+
+  async safeBatchTransferFromERC1155(
+    erc1155Address: string,
+    from: string,
+    to: string,
+    tokenIds: string[],
+    amounts: string[],
+    data: string = "0x"
+  ) {
+    const contract = new this.client.Contract(AbiERC1155, erc1155Address);
+    const encodeData = contract.methods
+      .safeBatchTransferFrom(from, to, tokenIds, amounts, data)
+      .encodeABI();
+    return await this.buildTransaction({
+      to: erc1155Address,
+      data: encodeData,
+    });
+  }
+
+  async balanceOfERC721(erc721Address: string): Promise<number> {
+    const nft = this.client.ERC721(erc721Address);
+    return await nft.balanceOf(await this.address());
+  }
+
+  async balanceOfERC1155(
+    erc1155Address: string,
+    tokenId: string
+  ): Promise<number> {
+    const nft = this.client.ERC1155(erc1155Address);
+    return await nft.balanceOf(await this.address(), tokenId);
+  }
+
+  async balanceOfBatchERC1155(
+    erc1155Address: string,
+    owners: string[],
+    tokenIds: string[]
+  ): Promise<number[]> {
+    const nft = this.client.ERC1155(erc1155Address);
+    return await nft.balanceOfBatch(owners, tokenIds);
+  }
+
+  async ownerOfERC721(erc721Address: string, tokenId: string): Promise<string> {
+    const nft = this.client.ERC721(erc721Address);
+    return await nft.ownerOf(tokenId);
+  }
+
+  async getApprovedERC721(
+    erc721Address: string,
+    tokenId: string
+  ): Promise<string> {
+    const nft = this.client.ERC721(erc721Address);
+    return await nft.getApproved(tokenId);
+  }
+
+  async isApprovedForAllERC721(
+    erc721Address: string,
+    owner: string,
+    operator: string
+  ): Promise<boolean> {
+    const nft = this.client.ERC721(erc721Address);
+    return await nft.isApprovedForAll(owner, operator);
+  }
+
+  async isApprovedForAll1155(
+    erc1155Address: string,
+    owner: string,
+    operator: string
+  ): Promise<boolean> {
+    const nft = this.client.ERC1155(erc1155Address);
+    return await nft.isApprovedForAll(owner, operator);
   }
 }
